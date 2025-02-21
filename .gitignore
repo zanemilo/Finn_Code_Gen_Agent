@@ -35,6 +35,7 @@ MANIFEST
 # Installer logs
 pip-log.txt
 pip-delete-this-directory.txt
+debug_repsonse.txt
 
 # Unit test / coverage reports
 htmlcov/
@@ -120,3 +121,4 @@ dmypy.json
 
 # Cython debug symbols
 cython_debug/
+
