@@ -8,6 +8,9 @@ from agents.executor import execute_script
 from agents.logger import setup_logging
 
 TASK_FILE = "tasks.json"
+CONTEXT_FILE = "context.txt"  # File holding the aggregated context from your codebase
+
+
 
 class TaskOrchestrator:
     def __init__(self):
@@ -15,6 +18,21 @@ class TaskOrchestrator:
         self.logger = logging.getLogger(__name__)
         self.tasks = self.load_tasks()
     
+    def get_context(self):
+        """Reads the latest aggregated context from CONTEXT_FILE."""
+        try:
+            with open(CONTEXT_FILE, "r", encoding="utf-8") as f:
+                return f.read()
+        except Exception as e:
+            self.logger.error(f"Failed to load context from {CONTEXT_FILE}: {e}")
+            return ""
+        
+    def prepare_prompt(self, task_prompt):
+        """Prepends the current context to the task prompt."""
+        context = self.get_context()
+        full_prompt = f"{context}\n\n{task_prompt}"
+        return full_prompt
+
     def load_tasks(self):
         """Load and parse the tasks.json file."""
         if not os.path.exists(TASK_FILE):
@@ -46,12 +64,14 @@ class TaskOrchestrator:
             script_file = f"scripts/script_{task_id}.py"
         except Exception as e:
             self.logger.error(f"Task {task_id}: Error parsing task - {e}")
+            return
 
+        full_prompt = self.prepare_prompt(prompt)
         self.logger.info(f"Processing Task {task_id}: {prompt}")
 
         try:
             # Generate the script
-            if not generate_script(prompt, script_file, file_name=file_name):
+            if not generate_script(full_prompt, script_file, file_name=file_name):
                 self.logger.error(f"Task {task_id}: Script generation failed.")
                 task["status"] = "failed"
                 return

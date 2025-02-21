@@ -1,0 +1,2234 @@
+// SHORTHAND LOOKUP
+{
+    "class ": "\u00a2",
+    "def ": "\u0192",
+    "try:": "\u1e6a",
+    "except ": "\u1e8a",
+    "logging.error": "\u2130",
+    "logging.info": "\u2110",
+    "self.": "$",
+    "\"\"\"": "\u2202",
+    "return ": "\u2192",
+    "import ": "\u2193",
+    "from ": "\u2198",
+    " as ": "\u2248",
+    " with ": "\u222b",
+    " if ": "\u22a2",
+    " else:": "\u22a3",
+    " elif ": "~",
+    " for ": "\u2200",
+    " while ": "\u2203",
+    " in ": "\u2208",
+    " not ": "\u00ac",
+    " and ": "\u2227",
+    " or ": "\u2228",
+    " is ": "\u2261",
+    " None": "\u2205",
+    " True": "\u22a4",
+    " False": "\u22a5",
+    " pass": "\u2225",
+    " break": "\u21af",
+    " continue": "\u21ba",
+    " lambda ": "\u03bb",
+    " yield ": "\u03b3",
+    " global ": "\u03a9",
+    " nonlocal ": "\u03b7"
+}
+
+
+
+# --- context_generator.py ---
+
+↓os
+↓json
+↓re
+↘agents.logger ↓setup_logging
+↓logging
+setup_logging(log_file="logs/context_generator.log")
+logger = logging.getLogger(__name__)
+SHORTHAND_MAP = {
+    "¢": "¢",
+    "ƒ": "ƒ",
+    "Ṫ": "Ṫ",
+    "Ẋ": "Ẋ",
+    "ℰ": "ℰ",
+    "ℐ": "ℐ",
+    "$": "$",
+    "\"\"\"": "∂",
+    "→": "→",
+    "↓": "↓",
+    "↘": "↘",
+    "≈": "≈",
+    "∫": "∫",
+    "⊢": "⊢",
+    "⊣": "⊣",
+    "~": "~",
+    "∀": "∀",
+    "∃": "∃",
+    "∈": "∈",
+    "¬": "¬",
+    "∧": "∧",
+    "∨": "∨",
+    "≡": "≡",
+    "∅": "∅",
+    "⊤": "⊤",
+    "⊥": "⊥",
+    "∥": "∥",
+    "↯": "↯",
+    "↺": "↺",
+    "λ": "λ",
+    "γ": "γ",
+    "Ω": "Ω",
+    "η": "η"
+}
+ƒcompress_code1(code):
+    lines = code.splitlines()
+    filtered_lines = [line∀line∈lines⊢not line.strip().startswith("#")]
+    code = "\n".join(filtered_lines)
+   ∀pattern, shorthand∈SHORTHAND_MAP.items():
+        code = code.replace(pattern, shorthand)
+    code = re.sub(r'@DOC (.*?)',λm: f'@DOC {m.group(1).strip()}', code, flags=re.DOTALL)
+    →code
+ƒcompress_code(code):
+    lines = code.splitlines()
+    filtered_lines = [line.rstrip()∀line∈lines⊢not line.strip().startswith("#")]
+    filtered_lines = [line∀line∈filtered_lines⊢line.strip()]
+    code = "\n".join(filtered_lines)
+    ƒcondense_spaces(line):
+        leading = len(line) - len(line.lstrip())
+        →" " * leading + " ".join(line.split())
+    code = "\n".join(condense_spaces(line)∀line∈code.splitlines())
+   ∀pattern, shorthand∈SHORTHAND_MAP.items():
+        code = code.replace(pattern, shorthand)
+    code = re.sub(r'(.*?)@DOC ',λm: f' {m.group(1).strip()}', code, flags=re.DOTALL)
+    →code
+ƒis_valid_py_file(filepath):
+    ∂
+    Determine⊢the file≡a valid Python file∀context aggregation.
+    Excludes files ↘directories like .git, __pycache__, venv,∧env.
+    ∂
+    invalid_dirs = {'.git', '__pycache__', 'venv', 'env'}
+    parts = set(filepath.split(os.sep))
+    →filepath.endswith('.py') and¬parts.intersection(invalid_dirs)
+ƒgenerate_context(root_dir, output_file):
+    ∂
+    Recursively reads all .py files ↘root_dir (excluding unwanted directories)
+   ∧writes their compressed content into output_file∫headers indicating the source file.
+    ∂
+    aggregated_content = []
+    invalid_dirs = {'.git', '__pycache__', 'venv', 'env'}
+    lookup_header = "// SHORTHAND LOOKUP\n" + json.dumps(SHORTHAND_MAP, indent=4) + "\n\n"
+    aggregated_content.append(lookup_header)
+   ∀dirpath, dirnames, filenames∈os.walk(root_dir):
+        dirnames[:] = [d∀d∈dirnames⊢d not∈invalid_dirs]
+       ∀filename∈sorted(filenames):
+           ⊢filename.endswith('.py'):
+                full_path = os.path.join(dirpath, filename)
+               ⊢is_valid_py_file(full_path):
+                    Ṫ
+                       ∫open(full_path, "r", encoding="utf-8")≈f:
+                            content = f.read()
+                        compressed_content = compress_code(content)
+                        header = f"\n# --- {os.path.relpath(full_path, root_dir)} ---\n"
+                        aggregated_content.append(header)
+                        aggregated_content.append(compressed_content)
+                        aggregated_content.append("\n")
+                        logger.info(f"Added {full_path} to context.")
+                    ẊException≈e:
+                        logger.error(f"Error reading {full_path}: {e}")
+    Ṫ
+       ∫open(output_file, "w", encoding="utf-8")≈out_file:
+            out_file.write("\n".join(aggregated_content))
+        logger.info(f"Context file '{output_file}' created successfully.")
+    ẊException≈e:
+        logger.error(f"Error writing to {output_file}: {e}")
+if __name__ == "__main__":
+    project_root = os.path.abspath(".")
+    context_file = os.path.join(project_root, "context.txt")
+    generate_context(project_root, context_file)
+
+
+
+# --- main.py ---
+
+↓logging
+↘task_orchestrator ↓TaskOrchestrator
+ƒmain():
+    ∂Main entry point∀task processing.∂
+    orchestrator = TaskOrchestrator()
+    orchestrator.run()
+if __name__ == "__main__":
+    main()
+
+
+
+# --- openai_python_code_improver.py ---
+
+↓os
+↓sys
+↓openai
+script_dir = os.path.dirname(os.path.abspath(__file__))
+project_root = os.path.abspath(os.path.join(script_dir, os.pardir))
+sys.path.append(project_root)
+↘openai_script_extract ↓OpenAIScriptExtractor
+¢PythonCodeReviewer:
+    ƒ__init__(self, api_key, model="gpt-4o"):
+        ∂
+        Initialize the Python Code Reviewer.
+        Args:
+            api_key (str): Your OpenAI API key.
+            model (str): OpenAI model to use (default: gpt-4o).
+        ∂
+        $client = openai
+        $client.api_key = api_key
+        $model = model
+        $script_extractor = OpenAIScriptExtractor(api_key, model)
+    ƒreview_and_improve_code(self, file_path):
+        ∂
+        Reviews∧improves the Python code∈the specified file.
+        Args:
+            file_path (str): Path to the Python file to review∧improve.
+        ∂
+        Ṫ
+           ∫open(file_path, 'r', encoding='utf-8')≈file:
+                original_code = file.read()
+            prompt = f∂Review the following Python code. Provide an improved version using best practices∧clean coding principles:
+            {original_code}
+            Improved Version:
+            ∂
+            improved_code = $script_extractor.fetch_script(prompt)
+           ⊢not improved_code:
+                print("Failed to fetch the improved code ↘OpenAI.")
+                return
+            improved_file_path = file_path.replace(".py", "_improved.py")
+            $script_extractor.save_script_to_file(improved_code, improved_file_path)
+            print(f"Improved version of '{file_path}' written to '{improved_file_path}'.")
+        ẊFileNotFoundError:
+            print(f"Error: File '{file_path}'¬found.")
+        ẊException≈e:
+            print(f"An unexpected error occurred: {e}")
+    ƒmain(self, directory=None, file_name=None):
+        ∂
+        Main function to prompt user∀file review∧improvement.
+        May take dir∧file_name≈params
+        ∂
+        Ṫ
+           ⊢not directory:
+                directory = input("Enter the directory path: ")
+           ⊢not file_name:
+                file_name = input("Enter the Python file name: ")
+            file_path = os.path.join(directory, file_name)
+           ⊢not os.path.isfile(file_path):
+                print(f"The file '{file_path}' does¬exist.")
+                return
+            $review_and_improve_code(file_path)
+        ẊException≈e:
+            print(f"An unexpected error occurred during execution: {e}")
+if __name__ == "__main__":
+    api_key = os.getenv("OPENAI_API_KEY")
+   ⊢not api_key:
+        raise ValueError("OpenAI API key¬found∈environment variables.")
+    reviewer = PythonCodeReviewer(api_key)
+    reviewer.main(file_name="")
+
+
+
+# --- openai_script_extract.py ---
+
+↓openai
+↓os
+↓re
+↘openai ↓OpenAI, OpenAIError
+↘datetime ↓datetime
+¢OpenAIScriptExtractor:
+    ƒ__init__(self, api_key=os.getenv("OPENAI_API_KEY"), model="gpt-4o"):
+        ∂
+        Initialize the OpenAI Script Extractor.
+        Args:
+            api_key (str): Your OpenAI API key.
+            model (str): OpenAI model to use (default: gpt-4o).
+        ∂
+        $client = OpenAI(api_key=api_key)
+        $model = model
+    ƒfetch_script(self, prompt, max_tokens=3000, debug_file="debug_response.txt"):
+        ∂
+        Fetches a script response ↘the OpenAI API∧saves raw response∀debugging.
+        Args:
+            prompt (str): The user input prompt.
+            max_tokens (int): Maximum token limit∀the response.
+            debug_file (str): Path to save raw API response∀debugging.
+        Returns:
+            str: Extracted script content∨None⊢failed.
+        ∂
+        Ṫ
+            response = $client.chat.completions.create(
+                model=$model,
+                messages=[
+                    {"role": "system", "content": "You are a helpful coding assistant."},
+                    {"role": "user", "content": prompt}
+                ],
+                max_tokens=max_tokens,
+            )
+            raw_response = str(response)
+           ∫open(debug_file, "w")≈file:
+                file.write(raw_response)
+            print(f"Raw API response saved to {debug_file}")
+            message_content = response.choices[0].message.content
+            print("API Response Content:")
+            print(message_content)
+            code_blocks = re.findall(r"```(.*?)```", message_content, re.DOTALL)
+           ∀block∈code_blocks:
+               ⊢block.startswith("python"):
+                    script_content = block.replace("python", "", 1).strip()
+                    →script_content
+            print("No Python script found∈the response. Check the raw response.")
+            →None
+        ẊException≈e:
+            print(f"Error fetching script: {e}")
+            →None
+    ƒstrip_response_script(self, response):
+        ∂∂
+        code_blocks = re.findall(r"```(.*?)```", response, re.DOTALL)
+       ∀block∈code_blocks:
+           ⊢block.startswith("python"):
+                script_content = block.replace("python", "", 1).strip()
+                →script_content
+    ƒsave_script_to_file(self, script_content, output_file):
+        ∂
+        Saves the extracted script content to a Python file.
+        Args:
+            script_content (str): The script text to save.
+            output_file (str): Path to save the script file.
+        ∂
+        Ṫ
+           ∫open(output_file, 'w')≈file:
+                file.write(script_content)
+            print(f"Script saved to {output_file}")
+        ẊException≈e:
+            print(f"Error saving script to file: {e}")
+    ƒfetch_and_save_script(self, prompt, output_file, max_tokens=3000):
+        ∂
+        Fetches a script ↘the OpenAI API∧saves it to a file.
+        Args:
+            prompt (str): The user input prompt.
+            output_file (str): Path to save the script file.
+            max_tokens (int): Maximum token limit∀the response.
+        ∂
+        print("Fetching script ↘OpenAI...")
+        script_content = $fetch_script(prompt, max_tokens)
+        print(script_content)
+       ⊢script_content:
+            $save_script_to_file(script_content, output_file)
+       ⊣
+            print("Failed to fetch∨save script content.")
+if __name__ == "__main__":
+    date = str(datetime.now())[:10]
+    openai_api_key = os.getenv("OPENAI_API_KEY")
+   ⊢not openai_api_key:
+        raise ValueError("OpenAI API key¬found∈environment variables.")
+    extractor = OpenAIScriptExtractor(openai_api_key)
+    prompt = "Write a Python script framework∈a file that can be an abstracted module working off of pyGame to make top down rpg games streamlined by using moudlarization∧OOP∫best practices."
+    output_file = "generated_" + date + "_script.py"
+    extractor.fetch_and_save_script(prompt, output_file)
+
+
+
+# --- task_orchestrator.py ---
+
+↓json
+↓logging
+↓os
+↘agents.task_manager ↓get_next_task, mark_task_done
+↘agents.script_generator ↓generate_script
+↘agents.code_auditor ↓review_and_improve
+↘agents.executor ↓execute_script
+↘agents.logger ↓setup_logging
+TASK_FILE = "tasks.json"
+CONTEXT_FILE = "context.txt" # File holding the aggregated context ↘your codebase
+¢TaskOrchestrator:
+    ƒ__init__(self):
+        setup_logging()
+        $logger = logging.getLogger(__name__)
+        $tasks = $load_tasks()
+    ƒget_context(self):
+        ∂Reads the latest aggregated context ↘CONTEXT_FILE.∂
+        Ṫ
+           ∫open(CONTEXT_FILE, "r", encoding="utf-8")≈f:
+                →f.read()
+        ẊException≈e:
+            $logger.error(f"Failed to load context ↘{CONTEXT_FILE}: {e}")
+            →""
+    ƒprepare_prompt(self, task_prompt):
+        ∂Prepends the current context to the task prompt.∂
+        context = $get_context()
+        full_prompt = f"{context}\n\n{task_prompt}"
+        →full_prompt
+    ƒload_tasks(self):
+        ∂Load∧parse the tasks.json file.∂
+       ⊢not os.path.exists(TASK_FILE):
+            $logger.error("tasks.json¬found.")
+            →[]
+        Ṫ
+           ∫open(TASK_FILE, "r")≈file:
+                →json.load(file).get("tasks", [])
+        Ẋjson.JSONDecodeError:
+            $logger.error("Error reading tasks.json.")
+            →[]
+    ƒsave_tasks(self):
+        ∂Save the updated tasks.json file.∂
+        Ṫ
+           ∫open(TASK_FILE, "w")≈file:
+                json.dump({"tasks": $tasks}, file, indent=4)
+        ẊException≈e:
+            $logger.error(f"Error saving tasks.json - {e}")
+    ƒprocess_task(self, task):
+        ∂Process a single task.∂
+        Ṫ
+            task_id = task.get("id")
+            prompt = task.get("task")
+            file_name = task.get("file_name")
+            skip_auditor = task.get("skip_auditor",⊥)
+            execute_flag = task.get("execute",⊥)
+            script_file = f"scripts/script_{task_id}.py"
+        ẊException≈e:
+            $logger.error(f"Task {task_id}: Error parsing task - {e}")
+            return
+        full_prompt = $prepare_prompt(prompt)
+        $logger.info(f"Processing Task {task_id}: {prompt}")
+        Ṫ
+           ⊢not generate_script(full_prompt, script_file, file_name=file_name):
+                $logger.error(f"Task {task_id}: Script generation failed.")
+                task["status"] = "failed"
+                return
+            $logger.info(f"Task {task_id}: Script generated successfully.")
+           ⊢not skip_auditor:
+                script_file = review_and_improve(script_file)
+                $logger.info(f"Task {task_id}: Code reviewed∧improved.")
+           ⊢execute_flag:
+               ⊢execute_script(script_file):
+                    $logger.info(f"Task {task_id}: Execution successful.")
+                    task["status"] = "completed"
+               ⊣
+                    $logger.error(f"Task {task_id}: Execution failed.")
+                    task["status"] = "execution_failed"
+           ⊣
+                $logger.info(f"Task {task_id}: Execution skipped.")
+                task["status"] = "generated_only"
+            mark_task_done(task_id)
+        ẊException≈e:
+            $logger.error(f"Task {task_id}: An error occurred - {e}")
+            task["status"] = "error"
+    ƒrun(self):
+        ∂Run the task orchestration loop.∂
+        $logger.info("Starting task orchestration process...")
+       ∀task∈$tasks:
+           ⊢task["status"] == "pending":
+                $process_task(task)
+        $save_tasks()
+        $logger.info("Task processing complete.")
+        $logger.info("Task processing complete, flushing logs now...")
+        logging.shutdown()
+if __name__ == "__main__":
+    orchestrator = TaskOrchestrator()
+    orchestrator.run()
+
+
+
+# --- task_summary.py ---
+
+↓json
+↓logging
+↓os
+logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
+TASKS_FILE = "tasks.json"
+WARNING_THRESHOLD = 10
+ƒload_tasks(file_path):
+    ∂Load tasks ↘a JSON file.∂
+   ⊢not os.path.exists(file_path):
+        ℰ("The tasks file does¬exist.")
+        →[]
+    Ṫ
+       ∫open(file_path, "r")≈file:
+            →json.load(file)["tasks"]
+    Ẋjson.JSONDecodeError:
+        ℰ("The tasks file is¬a valid JSON.")
+        →[]
+ƒfilter_tasks(tasks, status):
+    ∂Filter tasks by status (e.g., 'pending', 'completed').∂
+    →[task∀task∈tasks⊢task.get("status") == status]
+ƒsummarize_tasks(tasks):
+    ∂Summarize tasks including priority, execution flags,∧logging details.∂
+    total_tasks = len(tasks)
+    pending_tasks = filter_tasks(tasks, "pending")
+    completed_tasks = filter_tasks(tasks, "completed")
+    ℐ(f"Total Tasks: {total_tasks}")
+    ℐ(f"Pending Tasks: {len(pending_tasks)}")
+    ℐ(f"Completed Tasks: {len(completed_tasks)}")
+   ⊢len(pending_tasks) > WARNING_THRESHOLD:
+        logging.warning("The number of pending tasks exceeds the threshold!")
+    ℐ("\n=== Pending Task Details ===")
+   ∀idx, task∈enumerate(pending_tasks, start=1):
+        priority = task.get("priority", "None")
+        skip_auditor = task.get("skip_auditor",⊥)
+        execute = task.get("execute",⊥)
+        ℐ(f"Task {idx}: {task.get('task', 'Unnamed Task')}")
+        ℐ(f" - Priority: {priority}")
+        ℐ(f" - Skip Auditor: {'Yes'⊢skip_auditor else 'No'}")
+        ℐ(f" - Execute: {'Yes'⊢execute else 'No'}")
+ƒmain():
+    ∂Main function to execute the task summary module.∂
+    tasks = load_tasks(TASKS_FILE)
+   ⊢tasks:
+        summarize_tasks(tasks)
+   ⊣
+        ℐ("No tasks available.")
+if __name__ == "__main__":
+    main()
+
+
+
+# --- agents\code_auditor.py ---
+
+↓os
+↓subprocess
+↓logging
+↘openai_python_code_improver ↓PythonCodeReviewer
+API_KEY = os.getenv("OPENAI_API_KEY")
+reviewer = PythonCodeReviewer(api_key=API_KEY)
+ƒrun_static_analysis(script_path):
+    ∂
+    Run static analysis on the script using flake8 to check∀style∧common issues.
+    Returns⊤⊢the script∥es the checks,⊥ otherwise.
+    ∂
+    Ṫ
+        result = subprocess.run(["flake8", script_path], capture_output=True, text=True)
+       ⊢result.returncode == 0:
+            ℐ(f"{script_path}∥ed flake8 checks.")
+            →True
+       ⊣
+            ℰ(f"Static analysis issues∈{script_path}:\n{result.stdout}\n{result.stderr}")
+            →False
+    ẊException≈e:
+        logging.exception(f"Error running static analysis on {script_path}: {e}")
+        →False
+ƒreview_and_improve(script_path):
+    ∂
+    Uses the AI-based PythonCodeReviewer to review∧improve the script.
+    It first optionally runs static analysis before invoking the reviewer.
+    Returns the path to the improved script⊢successful, otherwise returns the original script path.
+    ∂
+    ℐ(f"Starting review∧improvement∀{script_path}...")
+   ⊢not run_static_analysis(script_path):
+        logging.warning("Static analysis reported issues. Proceeding∫AI-based improvement anyway.")
+    Ṫ
+        reviewer.review_and_improve_code(script_path)
+        improved_script = script_path.replace(".py", "_improved.py")
+       ⊢os.path.exists(improved_script):
+            ℐ(f"Improved script available at {improved_script}.")
+            →improved_script
+       ⊣
+            ℰ("Improved script was¬created by the code reviewer.")
+            →script_path
+    ẊException≈e:
+        ℰ(f"Error during AI review∀{script_path}: {e}")
+        →script_path
+if __name__ == "__main__":
+    test_script = "scripts/example_script.py" # Change to a valid test file path
+    improved_path = review_and_improve(test_script)
+    print(f"Final script available at: {improved_path}")
+
+
+
+# --- agents\executor.py ---
+
+↓subprocess
+↓logging
+ƒexecute_script(script_path, timeout=10):
+    ∂
+    Executes the specified Python script∧logs its output.
+    Returns⊤⊢execution≡successful within the timeout, otherwise⊥.
+    ∂
+    Ṫ
+        result = subprocess.run(["python", script_path], capture_output=True, text=True, timeout=timeout)
+        ℐ(f"Execution output∀{script_path}:\n{result.stdout}")
+       ⊢result.returncode == 0:
+            ℐ(f"{script_path} executed successfully.")
+            →True
+       ⊣
+            ℰ(f"{script_path} execution failed:\n{result.stderr}")
+            →False
+    Ẋsubprocess.TimeoutExpired:
+        logging.warning(f"Execution of {script_path} timed out after {timeout} seconds.")
+        →False
+    ẊException≈e:
+        logging.exception(f"Error executing {script_path}: {e}")
+        →False
+if __name__ == "__main__":
+    script = "scripts/script_test.py"
+    execute_script(script)
+
+
+
+# --- agents\logger.py ---
+
+↓logging
+↓os
+ƒsetup_logging(log_file="logs/system.log"):
+    ∂
+    Sets up logging to a specified file∧the console.
+    ∂
+    os.makedirs("logs", exist_ok=True)
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s [%(levelname)s] %(message)s",
+        handlers=[
+            logging.FileHandler(log_file),
+            logging.StreamHandler()
+        ]
+    )
+if __name__ == "__main__":
+    setup_logging()
+    ℐ("Logger≡set up.")
+
+
+
+# --- agents\script_generator.py ---
+
+↓os
+↓re
+↘openai_script_extract ↓OpenAIScriptExtractor
+SCRIPT_DIR = "scripts"
+ƒsanitize_filename(task_description):
+    ∂Convert task description into a valid filename.∂
+    filename = task_description.lower().replace(" ", "_")
+    filename = re.sub(r'[^a-z0-9_]', '', filename) # Remove special characters
+    filename = filename.replace("py", "")
+    →filename[:50] # Limit filename length
+ƒgenerate_unique_filename(base_name):
+    ∂Ensure unique filename by appending numbers⊢needed.∂
+    script_path = os.path.join(SCRIPT_DIR, f"{base_name}.py")
+    count = 1
+   ∃os.path.exists(script_path):
+        script_path = os.path.join(SCRIPT_DIR, f"{base_name}_{count}.py")
+        count += 1
+    →script_path
+ƒgenerate_script(prompt, task_description, file_name=None):
+    ∂Generate Python script dynamically based on task description∨provided file name.∂
+    extractor = OpenAIScriptExtractor()
+   ⊢file_name:
+        base_filename = sanitize_filename(file_name)
+   ⊣
+        base_filename = sanitize_filename(task_description)
+    script_path = generate_unique_filename(base_filename)
+    print(f"Generating script: {script_path}")
+    script_content = extractor.fetch_script(prompt)
+   ∫open(script_path, "w", encoding="utf-8")≈script_file:
+        script_file.write(script_content)
+    →script_path
+
+
+
+# --- agents\task_manager.py ---
+
+↓json
+↓os
+TASK_FILE = "tasks.json"
+ƒload_tasks():
+    ∂
+    Load tasks ↘the JSON file.
+    Returns:
+        dict: A dictionary containing the tasks.
+    ∂
+   ⊢not os.path.exists(TASK_FILE):
+        →{"tasks": []}
+   ∫open(TASK_FILE, "r")≈f:
+        →json.load(f)
+ƒsave_tasks(tasks):
+    ∂
+    Save tasks to the JSON file.
+    Args:
+        tasks (dict): A dictionary containing the tasks to be saved.
+    ∂
+   ∫open(TASK_FILE, "w")≈f:
+        json.dump(tasks, f, indent=4)
+ƒadd_task(task):
+    ∂
+    Add a new task to the task list.
+    Args:
+        task (dict): A dictionary representing the task to be added.
+    ∂
+    tasks = load_tasks()
+    tasks.setdefault("tasks", []).append(task)
+    save_tasks(tasks)
+ƒget_next_task():
+    ∂
+    Get the next pending task.
+    Returns:
+        dict∨None: The next pending task⊢available, otherwise∅.
+    ∂
+    tasks = load_tasks()
+   ∀task∈tasks.get("tasks", []):
+       ⊢task.get("status") == "pending":
+            →task
+    →None
+ƒmark_task_done(task_id):
+    ∂
+    Mark a task≈completed.
+    Args:
+        task_id (int): The ID of the task to be marked≈completed.
+    ∂
+    tasks = load_tasks()
+   ∀task∈tasks.get("tasks", []):
+       ⊢task.get("id") == task_id:
+            task["status"] = "completed"
+    save_tasks(tasks)
+
+
+
+# --- scripts\CharClass.py ---
+
+↓sys
+sys.path.append("..") # Adds the parent directory to the Python module search path
+↘systems.core_library ↓class_stats
+¢CharClass:
+    ∂
+    Compositional Character Class layers over entities/players.
+    Aids∈keeping track of each entities ¢info.
+    ∂
+    ƒ__init__(self, char_class, level=1, abilities=[], skills=[], feats=[], spells=[], proficiencies=[], resource_points=0):
+        $char_¢= char_class
+        $level = level
+        $abilities = $get_stat('abilities', char_class)
+        $skills = $get_stat('skills', char_class)
+        $feats = $get_stat('feats', char_class)
+        $spells = $get_stat('spells', char_class)
+        $proficiencies = $get_stat('proficiencies', char_class)
+        $resource_points = $get_stat('resource_points', char_class)
+        $str = $get_stat('str', char_class)
+        $dex = $get_stat('dex', char_class)
+        $con = $get_stat('con', char_class)
+        $intel = $get_stat('int', char_class)
+        $wis = $get_stat('wis', char_class)
+        $cha = $get_stat('cha', char_class)
+    ƒget_stat(self, stat : str, char_¢: str):
+        ∂Returns character classes attributes given params.∂
+       ⊢char_¢in class_stats:
+            →class_stats[char_class][stat]
+
+
+
+# --- scripts\DialogueManager.py ---
+
+↓textwrap
+↓time
+↓os
+↓platform
+¢DialogueManager:
+    ∂
+    Handles dialogue events using QuestManager∀structured narratives∧choices.
+    Delivers dialogue text∧manages player input∀branching options∈the terminal.
+    ∂
+    ƒ__init__(self, quest_manager):
+        ∂
+        Initializes the DialogueManager.
+        Args:
+            quest_manager (QuestManager): The QuestManager instance∀managing quests.
+        ∂
+        $quest_manager = quest_manager # Reference to QuestManager instance
+        $running =⊥ # Indicates⊢the dialogue event≡active
+        $selected_option =∅ # The player's selected option
+    ƒdisplay_narrative(self):
+        ∂
+        Fetches∧displays the current narrative text ↘QuestManager.
+        Formats the output∀better readability∈the terminal.
+        ∂
+        current_narrative = $quest_manager.get_current_narrative()
+        border = "=" * 72
+        wrapped_text = textwrap.fill(current_narrative, width=70) # Wrap text to 70 chars
+        line = ''
+        print(f"\n{border}")
+        time.sleep(.175)
+        print(f"\n{wrapped_text}\n")
+        time.sleep(.175)
+        print(border)
+        time.sleep(.175)
+    ƒclear_terminal(self):
+        ∂
+        Clears the terminal screen∀a clean display.
+        Works on both Windows∧Unix-based systems (Linux/MacOS).
+        ∂
+        time.sleep(.175)
+       ⊢platform.system() == "Windows":
+            os.system("cls") # Windows clear command
+       ⊣
+            os.system("clear") # Unix-based systems clear command
+    ƒdisplay_options(self):
+        ∂
+        Fetches∧displays the current options∀the dialogue ↘QuestManager.
+        ∂
+        options = $quest_manager.get_current_options()
+        print("\nChoose an option:")
+       ∀i, option∈enumerate(options, 1):
+            print(f"{i}: {option}")
+            time.sleep(.175)
+    ƒget_player_choice(self):
+        ∂
+        Prompts the player to select an option∧validates their input.
+        Returns:
+            int: The index of the player's chosen option.
+        ∂
+        options = $quest_manager.get_current_options()
+        valid_choices = range(1, len(options) + 1)
+        choice =∅
+       ∃choice not∈valid_choices:
+            Ṫ
+                choice = int(input("\nEnter your choice: "))
+               ⊢choice not∈valid_choices:
+                    print("Invalid choice. Please select a valid option.")
+            ẊValueError:
+                print("Invalid input. Please enter a number corresponding to an option.")
+        →choice - 1 # Return zero-based index∀processing
+    ƒrun_script(self, step, choice, player):
+        ∂
+        Dynamically calls the script associated∫the current narrative step.
+        Args:
+            step (int): The current narrative step index.
+        Returns:
+           ∅
+        ∂
+        script = $quest_manager.quest.tasks[$quest_manager.current_task_id]["scripts"].get(step)
+       ⊢script:
+            tasks = $quest_manager.quest.tasks
+            print(f"Running script∀step {step}...")
+            print(f"questmanager.quest.tasks: {tasks}")
+            script(task_id=$quest_manager.current_task_id, tasks=tasks, choice=choice, player=player)
+       ⊣
+            print(f"No script defined∀step {step}.")
+    ƒrun_dialogue_event(self, player=None):
+        ∂
+        Manages the full dialogue event, interacting∫QuestManager∀progression.
+        ∂
+        $running =⊤
+       ∃$running and¬$quest_manager.is_quest_complete:
+            current_step = $quest_manager.current_step
+            $clear_terminal()
+            $display_narrative()
+            options = $quest_manager.get_current_options()
+           ⊢options:
+                $display_options()
+                player_choice_index = $get_player_choice()
+                selected_option = options[player_choice_index]
+                print(f"\nYou selected: {selected_option}")
+                time.sleep(.3)
+                Ṫ
+                    new_tasks = $run_script(current_step, player_choice_index, player)
+                    $quest_manager.quest.update_tasks(new_tasks) # Update Task dict of current quest
+                ẊException≈e:
+                    print(f"Error running script∀step {$quest_manager.current_step}: {e}")
+                next_narrative = $quest_manager.advance_step(player_choice_index)
+               ⊢next_narrative≡None:
+                    $running =⊥
+        print("\nDialogue concluded.")
+
+
+
+# --- scripts\Encounter.py ---
+
+↘Event ↓Event
+¢Encounter(Event):
+    ∂
+    Encounter Class∀managing dynamic quest instances, inheriting ↘the Event class.
+    This ¢handles the flow of an encounter, including presenting narrative text,
+    processing player choices,∧handling different outcomes such≈combat,
+    skill checks,∧narrative events.
+    Attributes:
+        encounter_data (dict): A dictionary containing the structure∧data of the encounter.
+        current_state (str): The current state∨node within the encounter data.
+    ∂
+    ƒ__init__(self, name, description, encounter_data):
+        ∂
+        Initializes a new Encounter instance∫a name, description,∧encounter data.
+        Args:
+            name (str): The name of the encounter.
+            description (str): A brief description of the encounter.
+            encounter_data (dict): The data structure defining the encounter's flow, choices,∧outcomes.
+        ∂
+        super().__init__(name, description) # Initialize the base Event ¢with name∧description
+        $encounter_data = encounter_data # Store the encounter data∀managing flow
+        $current_state = 'start' # Initialize the encounter's current state to 'start'
+    ƒstart(self):
+        ∂
+        Starts the encounter by invoking the base class's start method,
+        announcing the beginning of the encounter,∧displaying the initial text.
+        ∂
+        super().start() # Call the start method ↘the Event base class
+        print("An encounter begins...") # Announce the start of the encounter
+        $display_current_text() # Display the narrative text∀the current state
+    ƒprogress(self, choice):
+        ∂
+        Progresses the encounter based on the player's choice.
+        Args:
+            choice (str): The player's choice input that determines the next state.
+        Workflow:
+            1. Retrieve the current node's data ↘encounter_data.
+            2. Check⊢the current node has options and⊢the player's choice≡valid.
+            3. Update the current state based on the choice.
+            4. Display the narrative text∀the new state.
+            5. If the new state has an outcome, handle it accordingly.
+            6. If the choice≡invalid, notify the player.
+        ∂
+        current_node = $encounter_data[$current_state] # Get data∀the current state
+       ⊢"options"∈current_node∧choice∈current_node['options']:
+            $current_state = current_node['options'][choice]
+            $display_current_text() # Display narrative text∀the new state
+           ⊢"outcome"∈$encounter_data[$current_state]:
+                $handle_outcome() # Handle any outcomes associated∫the new state
+       ⊣
+            print("Invalid choice, try again.") # Notify the player of an invalid choice
+    ƒdisplay_current_text(self):
+        ∂
+        Displays the narrative text associated∫the current state of the encounter.
+        ∂
+        print($encounter_data[$current_state]['text']) # Print the current state's text
+    ƒhandle_outcome(self):
+        ∂
+        Handles the outcome of the current state based on the encounter data.
+        Depending on the outcome type, it calls the corresponding method to handle:
+            - Combat scenarios
+            - Skill checks
+            - Narrative events
+        After handling the outcome, it updates the encounter status to completed.
+        ∂
+        outcome = $encounter_data[$current_state]['outcome'] # Retrieve the outcome type
+       ⊢outcome == "combat":
+            $initiate_combat() # Initiate combat sequence
+       ~outcome == "skill_check":
+            $perform_skill_check() # Perform a skill check
+       ~outcome == "narrative":
+            $narrative_event() # Handle a special narrative event
+        $update_status(completed=True) # Mark the encounter≈completed
+    ƒinitiate_combat(self):
+        ∂
+        Initiates a combat scenario.
+        Notes:
+            - Assumes that combat logic≡managed elsewhere, possibly integrating∫a Combat class.
+            - This method can be expanded to include detailed combat initiation steps.
+        ∂
+        print("Combat starts!") # Announce the start of combat
+    ƒperform_skill_check(self):
+        ∂
+        Performs a skill check scenario.
+        Notes:
+            - Handles the logic∀skill checks, such≈rolling dice∧determining success.
+            - This method can be expanded to include specific skill check mechanics.
+        ∂
+        print("Performing a skill check...") # Announce the skill check
+    ƒnarrative_event(self):
+        ∂
+        Handles a special narrative event within the encounter.
+        Notes:
+            - Manages unique narrative-driven events that do¬involve combat∨skill checks.
+            - This method can be expanded to include complex narrative interactions.
+        ∂
+        print("A special event unfolds...") # Announce the narrative event
+    ƒend(self):
+        ∂
+        Ends the encounter by invoking the base class's end method∧announcing the outcome.
+        Depending on whether the encounter was completed∨failed, it notifies the player accordingly.
+        ∂
+        super().end() # Call the end method ↘the Event base class
+       ⊢$is_completed:
+            print("The encounter has been resolved.") # Notify player of successful encounter resolution
+       ~$is_failed:
+            print("The encounter has failed.") # Notify player of failed encounter
+
+
+
+# --- scripts\Entity.py ---
+
+¢Entity:
+    ∂
+    A base ¢for all entities∈the game, such≈players, NPCs,∧mobs.
+    It encapsulates common attributes∧functionalities.
+    ∂
+    ƒ__init__(self, name, hp, arm_c, spd, xp, lvl, is_enemy =⊥):
+        ∂
+        Initialize a new instance of the Entity class.
+        :param name: str - The name of the entity.
+        :param hp: int - Health points of the entity, determining how much damage it can take before being defeated.
+        :param arm_c: int - Armor ¢of the entity, contributing to its defense against attacks.
+        :param spd: int - Speed of the entity, affecting its turn order∈combat.
+        :param xp: int - Experience points of the entity, used∀leveling up.
+        :param lvl: int - Current level of the entity, affecting its overall strength∧abilities.
+        ∂
+        $name = name
+        $hp = hp
+        $arm_c = arm_c
+        $spd = spd
+        $xp = xp
+        $lvl = lvl
+        $is_enemy = is_enemy # Used to designate other NPCs≈enemies,∀use∈combat.py
+        $status_effects = {} # Track status effects like 'poisoned', 'stunned', etc.
+    ƒget_name(self):
+        ∂Returns the name of the entity.∂
+        →$name
+    ƒset_name(self, name):
+        ∂Sets the name of the entity.∂
+        $name = name
+    ƒinit_name(): #∥ed testing∈new main
+        ∂
+        Prompt the user to enter a name∀their character.
+        Returns:
+            str: The name entered by the user, properly formatted.
+        ∂
+        name = input("Enter your name:\n") # Prompt user∀character name
+        →name.title() # Capitalize the first letter of each word∈the name
+    ƒget_hp(self):
+        ∂Returns the current hit points of the entity.∂
+        →$hp
+    ƒset_hp(self, hp):
+        ∂Sets the current hit points of the entity.∂
+       ⊢hp < 0:
+            hp = 0 # Ensure HP does¬go below 0
+        $hp = hp
+    ƒmodify_hp(self, amount):
+        ∂Modifies the current hit points by a specified amount.∂
+        $set_hp($hp + amount)
+       ⊢amount >= 0:
+            print(f"{$name} gains {amount} HP.")
+       ⊣
+            print(f"{$name} takes {abs(amount)} damage.")
+    ƒis_alive(self):
+        ∂Checks⊢the entity≡alive.∂
+        →$hp > 0
+    ƒadd_status_effect(self, effect, duration):
+        ∂Adds a status effect to the entity.∂
+        $status_effects[effect] = duration
+        print(f"{$name}≡now {effect}∀{duration} turns.")
+    ƒremove_status_effect(self, effect):
+        ∂Removes a status effect ↘the entity.∂
+       ⊢effect∈$status_effects:
+            del $status_effects[effect]
+            print(f"{$name}≡no longer {effect}.")
+    ƒupdate_status_effects(self):
+        ∂Updates the status effects, reducing the duration by 1.∂
+        expired_effects = []
+       ∀effect, duration∈$status_effects.items():
+            $status_effects[effect] = duration - 1
+           ⊢$status_effects[effect] <= 0:
+                expired_effects.append(effect)
+       ∀effect∈expired_effects:
+            $remove_status_effect(effect)
+    ƒdisplay_info(self):
+        ∂Displays basic information about the entity.∂
+        print(f"Name: {$name}, HP: {$hp}, Armor Class: {$arm_c}, Speed: {$spd}, XP: {$xp}, Level: {$lvl}")
+       ⊢$status_effects:
+            print(f"Status Effects: {', '.join([f'{effect} ({duration} turns)'∀effect, duration∈$status_effects.items()])}")
+       ⊣
+            print("Status Effects:∅")
+    ƒsheet(self): #∥ed testing∈new main
+        ∂
+        Generate∧display the character sheet∀a given character.
+        Args:
+            character (Player): The player character∀whom the sheet≡being generated.
+        ∂
+        stats = {
+            "STR": $str,
+            "DEX": $dex,
+            "CON": $con,
+            "INT": $intel,
+            "WIS": $wis,
+            "CHA": $cha,
+            "HP": $hp,
+            "AC": $arm_c,
+            "GP": $gold,
+            "SPD": $spd,
+            "LEVEL": $lvl,
+            "XP": $xp,
+        }
+        print(f∂\n
+        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        | NAME: {$name.upper().center(39)} |
+        | RACE: {$race.upper().center(39)} |
+        | CLASS: {$char_class.upper().center(38)} |
+        | LEVEL: {stats['LEVEL']}{' '*(2-len(str(stats['LEVEL'])))} |
+        | |
+        | STR: {stats['STR']}{' '*(2-len(str(stats['STR'])))} | DEX: {stats['DEX']}{' '*(2-len(str(stats['DEX'])))} | CON: {stats['CON']}{' '*(2-len(str(stats['CON'])))} | INT: {stats['INT']}{' '*(2-len(str(stats['INT'])))} | WIS: {stats['WIS']}{' '*(2-len(str(stats['WIS'])))} |
+        | CHA: {stats['CHA']}{' '*(2-len(str(stats['CHA'])))} | |
+        | ARMOR CLASS: {stats['AC']}{' '*(2-len(str(stats['AC'])))} | SPEED: {stats['SPD']}{' '*(2-len(str(stats['SPD'])))} |
+        | |
+        | HIT POINTS: {stats['HP']}{' '*(2-len(str(stats['HP'])))} | SPELL SLOTS: {'0'+' '*(2-len('2'))} |
+        | |
+        | GOLD: {stats['GP']}{' '*(2-len(str(stats['GP'])))} | XP: {stats['XP']}{' '*(2-len(str(stats['XP'])))} |
+        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        \n\n\n\n∂)
+
+
+
+# --- scripts\Event.py ---
+
+¢Event:
+    ∂Event Class acts≈abstract parent ¢to quest∧encounter classes. Handles base level functionality such≈name, desc, completion status, fail status.∂
+    ƒ__init__(self, name, description):
+        $name = name
+        $description = description
+        $is_active =⊥
+        $is_completed =⊥
+        $is_failed =⊥
+    ƒstart(self):
+        $is_active =⊤
+        print(f"Event '{$name}' has started: {$description}")
+    ƒend(self):
+        $is_active =⊥
+       ⊢not $is_failed:
+            $is_completed =⊤
+        print(f"Event '{$name}' has ended. {'Completed successfully.'⊢$is_completed else 'Failed.'}")
+    ƒprogress(self, decision=None):
+        raise NotImplementedError("Subclasses should implement this method to handle event progression based on player decisions.")
+    ƒdisplay_event_details(self):
+        print(f"Event Name: {$name}")
+        print(f"Description: {$description}")
+        print(f"Status: {'Active'⊢$is_active else 'Inactive'}")
+        print(f"Completed: {'Yes'⊢$is_completed else 'No'}")
+        print(f"Failed: {'Yes'⊢$is_failed else 'No'}")
+    ƒupdate_status(self, completed=False, failed=False):
+        $is_completed = completed
+        $is_failed = failed
+       ⊢completed∨failed:
+            $end()
+
+
+
+# --- scripts\InteractionManager.py ---
+
+↓random≈r
+↘..core ↓settings
+↘..entities ↓PlayerFactory≈pf
+¢InteractionManager:
+    ∂
+    InteractionManager ¢for handling interactions between entities.
+    ∂
+    ƒ__init__(self):
+       ∥
+    ƒcheck(self, check_type, player_roll, bias=r.randint(1, 18)): #∥ed testing∈new main
+        ∂
+        Handle validating different types of checks∧calculate the Difficulty Class (DC).
+        This function determines whether a player's roll meets∨exceeds the DC required∀a specific check type.
+        Args:
+            check_type (str): The type of check being performed (e.g., 'acrobatics', 'strength').
+            player_roll (int): The result of the player's roll.
+            bias (int, optional): A bias value added to the DC. Defaults to a random integer between 1∧18.
+        Returns:
+            bool:⊤⊢the player's roll≡sufficient to∥ the check,⊥ otherwise.
+        ∂
+        check_type = check_type.lower() # Convert check type to lowercase∀consistency
+        valid_types = [
+            'acrobatics', 'animal_handling', 'arcana', 'athletics', 'deception',
+            'history', 'insight', 'intimidation', 'investigation', 'medicine',
+            'nature', 'perception', 'performance', 'persuasion', 'religion', 'sleight_of_hand',
+            'stealth', 'survival', 'str','dex', 'con', 'int', 'wis', 'cha'] # List of valid check types
+        check_dc = 0 # Initialize difficulty class
+       ∥ed_check =⊥ # Initialize check result
+       ⊢check_type.lower()∈valid_types:
+            check_dc = bias + settings.current_difficulty + settings.location_difficulty
+           ⊢player_roll >= check_dc:
+               ∥ed_check =⊤ # Player∥es the check⊢roll meets∨exceeds DC
+            →passed_check # Return the result of the check
+    ƒskill_check_test(self, player):
+        ∂
+        Tests various skill checks∧opposing checks between the player∧a bandit.
+        Used∀a means to quickly test fucntionality∈main.
+        Steps:
+        1. Instantiates a bandit player∫random race∧class.
+        2. Displays the bandit's character sheet.
+        3. Performs∧prints the results of dexterity∧investigation checks∀the player.
+        4. Determines∧prints the winner of a strength-based opposing check between the player∧the bandit.
+        ∂
+        bandit = pf.create_player(npc=True, enemy=True)
+        bandit.sheet()
+        dex_passed = $check("dex", player.player_check_roll("dex"))
+        print(f'Did {player.get_name()}∥ the dex Check?: {dex_passed}')
+        investigation_passed = $check("investigation", player.player_check_roll("investigation"))
+        print(f'Did {player.get_name()}∥ the investigation Check?: {investigation_passed}')
+        winner = $opposing_check(player, bandit, "str")
+        print(f'The winner of the opposing check is: {winner}')
+    ƒopposing_check(self, entity_one, enitity_two, check_type): #∥ed testing∈new main
+            ∂
+            Conduct a check between two opposing Player instances based on a specific check type.
+            Args:
+                entity_one (Player): The first player entity.
+                enitity_two (Player): The second player entity.
+                check_type (str): The type of check to perform (e.g., 'strength', 'dexterity').
+            Returns:
+                str: The name of the entity that wins the check.
+            ∂
+            e_one_roll = $check(check_type, entity_one.player_check_roll(check_type)) # FIX ME: To adjust this once I have used inheritance correctly,
+            e_two_roll = $check(check_type, enitity_two.player_check_roll(check_type)) # just use the check_roll method associated ↘the parent class
+           ⊢e_one_roll < e_two_roll:
+                →enitity_two.get_name() # Return entity two's name⊢they win the check
+           ~e_two_roll < e_one_roll:
+                →entity_one.get_name() # Return entity one's name⊢they win the check
+           ~e_one_roll == e_two_roll:
+                →$opposing_check(entity_one, enitity_two, check_type) # Repeat the check∈case of a tie
+
+
+
+# --- scripts\Item.py ---
+
+¢Item():
+    ∂Item class: think template∀items∈game∂
+    ƒ__init__(self, name, desc, val):
+        $name = name
+        $desc = desc
+        $val = val
+¢Melee_Item(Item):
+    ∂Melee_Item class: sub¢to Item∂
+    ƒ__init__(self, name, desc, val, damage, damage_type, poisoned, enchant):
+        super().__init__(name, desc, val)
+        $damage = damage
+        $damage_type = damage_type
+        $poisoned = poisoned
+        $enchant = enchant
+
+
+
+# --- scripts\Mob.py ---
+
+↓random≈r
+↓sys
+sys.path.append("..") # Adds the parent directory to the Python module search path
+↘entities.Entity ↓Entity
+↘systems.core_library ↓monster_dict≈md
+↘systems.core_library ↓name_list≈nl
+↘systems.core_library ↓monster_type_list≈mtl
+↘src.core.settings ↓Settings≈s
+¢Mob(Entity):
+    ∂Mob Class handles Mob instances∧random generation∂
+    ƒ__init__(self, name=None, mob=None, hp=None, arm_c=None, spd=30, xp=None, lvl=None, is_enemy=True):
+        super().__init__(name, hp, arm_c, spd, xp, lvl, is_enemy)
+        $name = name⊢name is¬None else r.choice(nl)
+        $mob = mob⊢mob is¬None else r.choice(list(md.keys()))
+        $hp = hp⊢hp is¬None else r.randint(10, 30)
+        $arm_c = arm_c⊢arm_c is¬None else r.randint(10, 15)
+        $spd = spd
+        $xp = xp⊢xp is¬None else r.randint(10, 30)
+        $lvl = lvl⊢lvl is¬None else r.randint(1, 3)
+        $mobtype = md[f'{$mob}'] # mob type based of mob selected
+        $max_hp = $hp # set max health (maybe make this a tuple?¬sure⊢I need to)
+        $is_enemy = is_enemy # Default to enemy
+    ƒget_hp(self):
+        →super().get_hp()
+    ƒget_name(self):
+        →super().get_name()
+    ƒset_hp(self, hp):
+        →super().set_hp(hp)
+    ƒset_name(self, name):
+        →super().set_name(name)
+
+
+
+# --- scripts\Player.py ---
+
+↓random≈r
+↓sys
+sys.path.append("..") # Adds the parent directory to the Python module search path
+↘systems ↓Item≈i
+↘systems ↓dice_Roll≈dr
+↘systems ↓core_library≈cl
+↘entities.effects.environment.Visibility ↓Visibility
+↘entities.Race ↓Race
+↘entities.CharClass ↓CharClass
+↘entities.Entity ↓Entity # using '↘Entity' due to probable cause of being mistaken≈a module.
+¢Player(Entity):
+    ∂Player Class to generate User's character instance≈well≈NPC instances.∂
+    ƒ__init__(self, name, race, char_class, gold = 10, arm_c = 10, spd = 30, xp = 0, lvl = 1, str = 0, dex = 0, con = 0, intel = 0, wis = 0, cha = 0, hp = 6, hpMax = 6, is_enemy =⊥, visibility_conditions=None, special_senses=[], **kwargs):
+        super().__init__(name, hp, arm_c, spd, xp, lvl, is_enemy)
+        $name = name
+        $race = Race(race)
+        $char_¢= CharClass(char_class)
+        $gold = gold
+        $arm_c = arm_c
+        $spd = spd
+        $xp = xp
+        $lvl = lvl
+        $str = str + dr.roll_stats() + $char_class.str
+        $dex = dex + dr.roll_stats() + $char_class.dex
+        $con = con + dr.roll_stats() + $char_class.con
+        $intel = intel + dr.roll_stats() + $char_class.intel
+        $wis = wis + dr.roll_stats() + $char_class.wis
+        $cha = cha + dr.roll_stats() + $char_class.cha
+        $hp = hp + $get_modifier($con)
+        $hpMax = hpMax + $get_modifier($con)
+        $abilities = $race.abilities + $char_class.abilities
+        $skills = $race.skills + $char_class.skills
+        $feats = $race.feats + $char_class.feats
+        $spells = $race.spells + $char_class.spells
+        $proficiencies = $race.proficiencies + $char_class.proficiencies
+        $resistances = $race.resistances
+        $is_enemy = is_enemy
+        $special_senses = special_senses
+        $visibility_conditions = visibility_conditions
+        $visibility = Visibility(special_senses=special_senses)
+        $disposition = $race.disposition
+        $inventory = {}
+        $equipment_slots = {
+            'head':∅,
+            'chest':∅,
+            'feet':∅,
+            'weapon':∅,
+            'shield':∅,
+        }
+    ƒweather_effect(self, weather, intensity):
+        ∂Apply effects based on the weather condition∧its intensity using a dictionary∫lambda functions.∂
+        effects = {
+            'rain':λi: (setattr(self, 'spd', $spd - i * 5),
+                               setattr(self, 'hp', $hp - 5)⊢i == 3 else∅),
+            'rain_storm':λi: (setattr(self, 'spd', $spd - i * 10),
+                                     setattr(self, 'hp', $hp - 10)⊢i == 3 else∅),
+            'lightning':λi: setattr(self, 'hp', $hp - 20)⊢i == 3 else∅,
+            'fog':λi: $visibility.update_visibility({'fog':⊤}),
+            'blizzard':λi: (setattr(self, 'spd', $spd - i * 7),
+                                   setattr(self, 'hp', $hp - i * 5)),
+            'sandstorm':λi: $visibility.update_visibility({'sandstorm':⊤}),
+            'hurricane':λi: (setattr(self, 'spd', $spd - i * 15),
+                                    setattr(self, 'hp', $hp - i * 15)),
+            'heatwave':λi: setattr(self, 'hp', $hp - i * 5),
+            'cold_snap':λi: setattr(self, 'hp', $hp - i * 5),
+            'dust_devil':λi: $visibility.update_visibility({'dust_devil':⊤}),
+            'hailstorm':λi: setattr(self, 'hp', $hp - i * 10),
+            'sleet':λi: (setattr(self, 'spd', $spd - i * 8),
+                                $visibility.update_visibility({'sleet':⊤})),
+            'tornado':λi: setattr(self, 'hp', $hp - i * 30)
+        }
+        effect_func = effects.get(weather)
+       ⊢effect_func:
+            effect_func(intensity)
+            $display_updated_status()
+    ƒdisplay_info(self):
+        ∂Display player's info.∂
+        print(f"Name: {$name}\nRace: {$race.race}\nCharacter Class: {$char_class.char_class}\n")
+        print(f"HP: {$hp}/{$hpMax}\nArmor Class: {$arm_c}\nSpeed: {$spd}\nGold: {$gold}")
+        print(f"Stats: STR: {$str}, DEX: {$dex}, CON: {$con}, INT: {$intel}, WIS: {$wis}, CHA: {$cha}")
+        print(f"Abilities: {$abilities}\nSkills: {$skills}\nFeats: {$feats}\nSpells: {$spells}\nProficiencies: {$proficiencies}")
+        print(f"Disposition: {$disposition}\n")
+    ƒapply_environment_effect(self, condition):
+        $visibility.update_visibility(condition)
+        print(f"{$name}'s current visibility: {$visibility.check_visibility()}")
+    ƒequip_item(self, item):
+        ∂Equip an item to the appropriate equipment slot∂
+       ⊢item.slot not∈$equipment_slots:
+            print(f"{item.name} is¬equippable.")
+            return
+       ⊢$equipment_slots[item.slot] is¬None:
+            print(f"{$name} already has an item equipped∈the {item.slot} slot.")
+            return
+        $equipment_slots[item.slot] = item
+        print(f"{$name} equipped {item.name}.")
+    ƒunequip_item(self, slot):
+        ∂Unequip an item ↘the specified slot∂
+       ⊢slot not∈$equipment_slots:
+            print(f"Invalid equipment slot: {slot}.")
+            return
+       ⊢$equipment_slots[slot]≡None:
+            print(f"No item equipped∈{slot} slot.")
+            return
+        unequipped_item = $equipment_slots[slot]
+        $equipment_slots[slot] =∅
+        print(f"{$name} unequipped {unequipped_item.name} ↘{slot}.")
+    ƒdisplay_equipment(self):
+        ∂Display the items currently equipped∂
+        print("Equipment:")
+       ∀slot, item∈$equipment_slots.items():
+           ⊢item:
+                print(f"{slot}: {item.name}")
+           ⊣
+                print(f"{slot}: Empty")
+    ƒget_name(self):
+        →$name
+    ƒset_name(self, name):
+        $name = name
+    ƒget_race(self):
+        →$race
+    ƒset_race(self, race):
+        $race = race
+    ƒget_char_class(self):
+        →$char_class
+    ƒset_char_class(self, char_class):
+        $char_¢= char_class
+    ƒget_gold(self):
+        →$gold
+    ƒset_gold(self, gold):
+        $gold = gold
+    ƒget_arm_c(self):
+        →$arm_c
+    ƒset_arm_c(self, arm_c):
+        $arm_c = arm_c
+    ƒget_hp(self):
+        →$hp
+    ƒset_hp(self, hp):
+        $hp = hp
+    ƒget_hpMax(self):
+        →$hpMax
+    ƒset_hpMax(self, hpMax):
+        $hpMax = hpMax
+    ƒget_spd(self):
+        →$spd
+    ƒset_spd(self, spd):
+        $spd = spd
+    ƒget_xp(self):
+        →$xp
+    ƒset_xp(self, xp):
+        $xp = xp
+    ƒget_lvl(self):
+        →$lvl
+    ƒset_lvl(self, lvl):
+        $lvl = lvl
+    ƒget_intel(self):
+        →$intel
+    ƒset_intel(self, intel):
+        $intel = intel
+    ƒget_wis(self):
+        →$wis
+    ƒset_wis(self, wis):
+        $wis = wis
+    ƒget_cha(self):
+        →$cha
+    ƒset_cha(self, cha):
+        $cha = cha
+    ƒget_str(self):
+        →$str
+    ƒset_str(self, str):
+        $str = str
+    ƒget_dex(self):
+        →$dex
+    ƒset_dex(self, dex):
+        $dex = dex
+    ƒget_con(self):
+        →$con
+    ƒset_con(self, con):
+        $con = con
+    ƒget_item(self, amount, item):
+        ∂add, append the item∧amount into the $inventory∂
+        $inventory.update({str(item.name) : str(amount)})
+        print(f"{$name} recieved {amount} {item.name}!\n")
+    ƒgive_item(self, action, amount, item):
+        ∂method∀user character giving away, selling, dropping, donating an item∂
+       ⊢item not∈$inventory:
+            print('You do¬have enough', item.name, f'to {action}!\n')
+       ~$inventory[str(item.name)] < amount∨$inventory[str(item.name)] <= 0:
+            print('You do¬have enough', item.name, f'to {action}!\n')
+       ⊣
+            $inventory[str(item.name)] -= amount #this should fix the bug of keeping item∈inv but removes all¬some
+            print(f"{$name} {action} {amount} {item}\n")
+    ƒshow_inventory(self):
+        ∂Displays player's inventory contents∂
+        num = 1
+       ∀item∈$inventory:
+            print(f'{num}. {item} - {$inventory[item]}') # item would be the name (key), $inventory[item] would be the corresponding value
+            num += 1
+    ƒget_modifier(self, stat):
+        →(stat - 10) //2
+    ƒget_stat(self, stat):
+        ∂Takes stat≈an args∧returns instances stats value∂
+        stat = stat.lower()
+        valid_types = ['str','dex', 'con', 'intel', 'wis', 'cha']
+       ⊢stat∈valid_types:
+           ⊢stat == 'str':
+                →$get_str()
+           ~stat == 'dex':
+                →$get_dex()
+           ~stat == 'con':
+                →$get_con()
+           ~stat == 'intel':
+                →$get_intel()
+           ~stat == 'wis':
+                →$get_wis()
+           ~stat == 'cha':
+                →$get_cha()
+           ⊣
+                print(f'Error: An unexpected error occured∃attempting to find stat args matching stat∀instance\nstat: {stat}')
+    ƒget_skill_stat(self, skill):
+        ∂Takes skill≈an args∧returns instances stats value∂
+        stat_mapping = {
+            'acrobatics': $get_dex(), # Dexterity∀Acrobatics
+            'animal_handling': $get_wis(), # Wisdom∀Animal Handling
+            'arcana': $get_intel(), # Intelligence∀Arcana
+            'athletics': $get_str(), # Strength∀Athletics
+            'deception': $get_cha(), # Charisma∀Deception
+            'history': $get_intel(), # Intelligence∀History
+            'insight': $get_wis(), # Wisdom∀Insight
+            'intimidation': $get_cha(), # Charisma∀Intimidation
+            'investigation': $get_intel(), # Intelligence∀Investigation
+            'medicine': $get_wis(), # Wisdom∀Medicine
+            'nature': $get_intel(), # Intelligence∀Nature
+            'perception': $get_wis(), # Wisdom∀Perception
+            'performance': $get_cha(), # Charisma∀Performance
+            'persuasion': $get_cha(), # Charisma∀Persuasion
+            'religion': $get_intel(), # Intelligence∀Religion
+            'sleight_of_hand': $get_dex(), # Dexterity∀Sleight of Hand
+            'stealth': $get_dex(), # Dexterity∀Stealth
+            'survival': $get_wis(), # Wisdom∀Survival
+        }
+        skill = skill.lower()
+       ⊢skill∈stat_mapping:
+            →stat_mapping[skill]
+       ⊣
+            print(f'Error: Skill "{skill}"¬found∈the mapping.')
+    ƒcheck_roll(self, check_type):
+        ∂Takes stat≈an args∧rolls a d20 + the instances stat associated modifier. -> int of sum of entity roll∂
+        check_type = check_type.lower()
+        valid_types = [
+        'acrobatics', 'animal_handling', 'arcana', 'athletics', 'deception',
+        'history', 'insight', 'intimidation', 'investigation', 'medicine',
+        'nature', 'perception', 'performance', 'persuasion', 'religion', 'sleight_of_hand',
+        'stealth', 'survival', 'str','dex', 'con', 'intel', 'wis', 'cha']
+        sum_of_player_roll = 0
+       ⊢check_type∈valid_types[:valid_types.index('survival')+1]:
+            sum_of_player_roll = dr.roll_d20() + $get_modifier($get_skill_stat(check_type))
+       ~check_type∈valid_types:
+            sum_of_player_roll = dr.roll_d20() + $get_modifier($get_stat(check_type))
+        →int(sum_of_player_roll)
+    ƒcalculate_damage_resistance(self, damage_type, damage_amount):
+        ∂Calculate damage taken based on resistances.∂
+       ⊢damage_type∈$resistances:
+            resistance_multiplier = $resistances[damage_type]
+            damage_amount *= resistance_multiplier
+            print(f"Resistance applied: {damage_type} damage reduced to {damage_amount}.")
+        →damage_amount
+    ƒcheck_disposition(self, target_race):
+        ∂Check the player's disposition towards another race.∂
+        →$disposition.get(target_race, 0)
+
+
+
+# --- scripts\PlayerFactory.py ---
+
+↓random≈r
+↓sys
+sys.path.append("..") # Adds the parent directory to the Python module search path
+↘entities.Player ↓Player
+↘systems.core_library ↓race_list, class_list, races, classes, name_list
+¢PlayerFactory:
+    ƒ__init__(self):
+       ∥
+    ƒcreate_player(self, npc=False, enemy=False):
+        ∂
+        Creates a new player character by prompting the user∀input.
+        Alternatively allows∀factory building of NPC players⊢npc
+        param≡True.
+        Steps:
+        1. Prompts the user to enter a name.
+        2. Prompts the user to select a valid race.
+        3. Prompts the user to select a valid class.
+        4. Instantiates a new player∫the provided information.
+        5. Displays the player's character sheet.
+        Returns:
+            Player: Instance
+        ∂
+       ⊢not npc:
+            player_name = $get_init_name()
+            player_race = $get_valid_race()
+            player_¢= $get_valid_class()
+            new_player = Player(player_name, player_race, player_class)
+       ⊢npc:
+           ⊢enemy:
+                new_player = Player(r.choice(list(name_list)), r.choice(list(races)), r.choice(list(classes)), is_enemy=True)
+           ⊣
+                new_player = Player(r.choice(list(name_list)), r.choice(list(races)), r.choice(list(classes)))
+        →new_player
+    ƒget_init_name(self):
+        ∂
+        Prompt the user to enter the name∀their character.
+        Does a verification step check to ensure player≡satisfied∫name.
+        Returns:
+            str: Name of player
+        ∂
+        choices = ['y', 'yes', '1', 1, 'n', 'no', '2', 2]
+        valid =⊥
+       ∃not valid:
+            name = input("Please enter a name∀your character:\n")
+           ⊢name:
+                choice =∅
+               ∃choice not∈choices:
+                    print(f"Please confirm that you would like your character to be named {name}:\n")
+                    choice = input("\n1. Yes\n2. No\n")
+               ⊢choice.lower()∈choices[:4]:
+                    valid =⊤
+           ⊣
+                print(f"Invalid name: {name}, please enter a valid name.")
+        →name
+    ƒget_valid_class(self): #∥ed testing∈new main
+        ∂
+        Prompt the user to select a valid character ¢↘the available options.
+        This function repeatedly prompts the user until a valid ¢name≡entered.
+        Returns:
+            str: The validated ¢name selected by the user.
+        ∂
+        valid =⊥ # Flag to indicate⊢a valid ¢has been chosen
+       ∃not valid:
+            class_list() # Display the list of available classes
+            class_name = input(f"Type∈your character's ¢or input the number the your selection ↘the list above:\n") # Prompt user∀input
+            class_name = class_name.title() # Capitalize the first letter of each word∈the ¢name
+           ⊢class_name∈classes:
+                valid =⊤ # Set flag to⊤⊢¢is valid
+           ~len(classes) - int(class_name) >= 0:
+                class_name = classes[int(class_name) - 1]
+                valid =⊤ # Set flag to⊤⊢correct race option number≡entered
+           ⊣
+                print(f"Invalid ¢name: {class_name}\n") # Inform the user of invalid input
+        →class_name # Return the valid ¢name
+    ƒget_valid_race(self): #∥ed testing∈new main
+        ∂
+        Prompt the user to select a valid character race ↘the available options.
+        This function repeatedly prompts the user until a valid race name≡entered.
+        Returns:
+            str: The validated race name selected by the user.
+        ∂
+        valid =⊥ # Flag to indicate⊢a valid race has been chosen
+       ∃not valid:
+            race_list() # Display the list of available races
+            race_name = input(f"Type∈your character's race∨input the number the your selection ↘the list above:\n") # Prompt user∀input
+            race_name = race_name.title() # Capitalize the first letter of each word∈the race name
+           ⊢race_name∈races:
+                valid =⊤ # Set flag to⊤⊢race≡valid
+           ~len(races) - int(race_name) >= 0:
+                race_name = races[int(race_name) - 1]
+                valid =⊤ # Set flag to⊤⊢correct race option number≡entered
+           ⊣
+                print(f"Invalid race name: {race_name}\n") # Inform the user of invalid input
+        →race_name # Return the valid race name
+    ƒvalid_class(self, class_name): #∥ed testing∈new main
+        ∂
+        Check⊢the provided ¢name≡valid.
+        Args:
+            class_name (str): The ¢name to validate.
+        Returns:
+            bool:⊤⊢the ¢name≡valid,⊥ otherwise.
+        ∂
+       ⊢class_name∈classes:
+            →True # Return⊤⊢¢name≡valid
+       ~class_name not∈classes:
+            →False # Return⊥⊢¢name≡invalid
+    ƒvalid_race(self, race_name): #∥ed testing∈new main
+        ∂
+        Check⊢the provided race name≡valid.
+        Args:
+            race_name (str): The race name to validate.
+        Returns:
+            bool:⊤⊢the race name≡valid,⊥ otherwise.
+        ∂
+       ⊢race_name∈races:
+            →True # Return⊤⊢race name≡valid
+       ~race_name not∈races:
+            →False # Return⊥⊢race name≡invalid
+
+
+
+# --- scripts\Quest.py ---
+
+↘.Event ↓Event
+¢Quest(Event):
+    ∂
+    Quest Class∀dynamically handling quest instances, inheriting ↘the Event class.
+    Attributes:
+        name (str): The name of the quest.
+        description (str): A description of the quest.
+        qtype (dict): Dictionary containing all possible quest/task types mapped to their corresponding methods.
+        tasks (dict): Dictionary containing the tasks associated∫the quest.
+    ∂
+    ƒ__init__(self, name, description, qtype, tasks):
+        ∂
+        Initializes a new Quest instance∫the given name, description, quest types,∧tasks.
+        Args:
+            name (str): The name of the quest.
+            description (str): A brief description of the quest.
+            qtype (dict): A dictionary mapping quest/task types to their corresponding methods.
+            tasks (dict): A dictionary containing the tasks associated∫the quest.
+        ∂
+        super().__init__(name, description) # Initialize the parent Event ¢with name∧description
+        $qtype = qtype # Dictionary of all possible quest/task types mapped to their methods
+        $tasks = tasks # Dictionary of tasks associated∫the quest
+    ƒupdate_tasks(self, new_tasks):
+        $tasks = new_tasks
+        →$tasks
+    ƒrun_task(self, task_id):
+        ∂
+        Executes a task based on the provided task ID. Continuously runs until the task≡marked≈complete.
+        Args:
+            task_id (int): The identifier of the task to run.
+        Note:
+            This method utilizes a dispatcher pattern where quest/task types are mapped to their corresponding methods.
+            It handles user interactions by presenting narrative∧choices, executing scripts based on player choices.
+        ∂
+        task = $tasks[task_id]
+       ∃task["complete"] !=⊤:
+            i = 1 # Initialize the narrative step index
+           ⊢task["type"]∈$qtype:
+               ∃$qtype[task["type"]](self, task_id, $tasks) ==⊥:
+                   ∃i <= len(task["narrative"]):
+                        choice =∅ # Initialize the player's choice
+                        number_answers = [] # List to store valid numerical choices
+                       ∀k∈range(1, len(task["answers"][i]) + 1):
+                            number_answers.append(str(k))
+                       ∃choice not∈task["answers"][i]∧choice not∈number_answers:
+                            print(task["narrative"][i])
+                            j = 1 # Initialize the answer option index
+                            print("Select an option:\n")
+                           ∀answer∈task["answers"][i]:
+                                print(f"{j}. {answer}")
+                                j += 1
+                            choice = str(input())
+                            task.update({"choice": choice})
+                       ⊢task["scripts"][i] !=∅:
+                            task["scripts"][i](self, task_id, $tasks)
+                            i += 1 # Move to the next narrative step
+                       ⊣
+                            i += 1 # Move to the next narrative step without executing a script
+    ƒcomplete_task(self, task_id, tasks):
+        ∂
+        Marks a task≈complete.
+        Args:
+            task_id (int): The identifier of the task to mark≈complete.
+            tasks (dict): The dictionary containing all tasks.
+        ∂
+        $tasks[task_id]["complete"] =⊤ # Set the 'complete' flag to⊤∀the specified task
+    ƒmethod_call1(task_id, tasks, choice=None, player=None):
+        ∂
+        Placeholder method representing the first type of method call during a task.
+        Args:
+            task_id (int): The identifier of the current task.
+            tasks (dict): The dictionary containing all tasks.
+        ∂
+        print(f"method call 1 called")
+    ƒmethod_call2(task_id, tasks, choice=None, player=None):
+        ∂
+        Placeholder method representing the second type of method call during a task.
+        Args:
+            task_id (int): The identifier of the current task.
+            tasks (dict): The dictionary containing all tasks.
+        ∂
+        print(f"method call 2 called")
+    ƒmethod_call3(task_id, tasks, choice=None, player=None):
+        ∂
+        Placeholder method representing the third type of method call during a task.
+        Args:
+            task_id (int): The identifier of the current task.
+            tasks (dict): The dictionary containing all tasks.
+        ∂
+        print(f"method call 3 called")
+    ƒfind(self, task_id, tasks):
+        ∂
+        Method to handle 'find' type tasks.
+        Args:
+            task_id (int): The identifier of the current task.
+            tasks (dict): The dictionary containing all tasks.
+        Returns:
+            bool:⊤⊢the task≡complete,⊥ otherwise.
+        ∂
+        print(f"find called")
+        →True⊢$tasks[task_id]["complete"] else⊥
+    ƒkill(self, task_id, tasks):
+        ∂
+        Method to handle 'kill' type tasks.
+        Args:
+            task_id (int): The identifier of the current task.
+            tasks (dict): The dictionary containing all tasks.
+        Returns:
+            bool:⊤⊢the task≡complete,⊥ otherwise.
+        ∂
+        print(f"kill called")
+        →True⊢$tasks[task_id]["complete"] else⊥
+    ƒskill_check(self, task_id, tasks):
+        ∂
+        Method to handle 'skill_check' type tasks.
+        Args:
+            task_id (int): The identifier of the current task.
+            tasks (dict): The dictionary containing all tasks.
+        Returns:
+            bool:⊤⊢the task≡complete,⊥ otherwise.
+        ∂
+        print(f"skill_check called")
+        →True⊢$tasks[task_id]["complete"] else⊥
+    ƒtest_class(self):
+        ∂
+        Test method to demonstrate the functionality of the Quest class.
+        Creates a test quest∫predefined task types∧tasks, then runs each task.
+        Note:
+            This method is∀testing∧demonstration purposes to show how the Quest ¢functions.
+        ∂
+        qtype = {
+            "find": Quest.find,
+            "kill": Quest.kill,
+            "skill_check": Quest.skill_check,
+        }
+        tasks = {
+            1: {
+                "name": "Find Finn",
+                "type": "find",
+                "complete":⊥,
+                "narrative": {
+                    1: "You arrive at the bustling town square. People are hurrying by, but you can't shake the feeling that Finn≡nearby.",
+                    2: "You catch a glimpse of someone matching Finn's description heading towards the old tavern.",
+                    3: "The tavern door creaks≈you step inside, the air thick∫the smell of ale∧the sound of quiet conversation.",
+                },
+                "answers": {
+                    1: ["look around", "scan the crowd", "watch ↘afar", "gaze through the people", "peek about", "take a gander"],
+                    2: ["follow", "head to tavern"],
+                    3: ["enter", "step inside"],
+                },
+                "scripts": {
+                    1: Quest.method_call1, # Call ¢method∀script step 1
+                    2: Quest.method_call2, # Call method ↘imported Temp ¢for script step 2
+                    3: Quest.method_call3,
+                },
+                "data": {
+                    "pos": "town_square",
+                },
+            },
+            2: {
+                "name": "Kill 10 Goblins",
+                "type": "kill",
+                "complete":⊥,
+                "narrative": {
+                    1: "The forest≡dark∧silent, save∀the rustling of leaves underfoot. You know goblins are near.",
+                    2: "You hear guttural voices ahead. The goblins have set up a camp∈a small clearing.",
+                    3: "The goblins are alerted to your presence∧draw their crude weapons, ready to fight.",
+                },
+                "answers": {
+                    1: ["advance", "move quietly"],
+                    2: ["observe", "prepare to attack"],
+                    3: ["fight", "engage"],
+                },
+                "scripts": {
+                    1: Quest.method_call1,
+                    2:∅,
+                    3: Quest.method_call3,
+                },
+                "data": {
+                    "amount": 10,
+                    "entity": "goblin",
+                },
+            },
+            3: {
+                "name": "Persuade Donnie",
+                "type": "skill_check",
+                "complete":⊥,
+                "narrative": {
+                    1: "Donnie glares at you ↘across the table, his arms crossed defensively. He's¬going to be easy to persuade.",
+                    2: "You present your case, carefully choosing your words to avoid triggering Donnie's temper.",
+                    3: "Donnie leans back, considering your words. You can tell he's wavering, but you need to close the deal.",
+                },
+                "answers": {
+                    1: ["start∫empathy", "mention common goals"],
+                    2: ["explain benefits", "highlight risks"],
+                    3: ["offer compromise", "ensure trust"],
+                },
+                "scripts": {
+                    1: Quest.method_call1,
+                    2:∅,
+                    3: Quest.method_call3,
+                },
+                "data": {
+                    "skill": "persuasion",
+                    "entity": "Donnie",
+                },
+            }
+        }
+        quest = Quest("Test Quest", "This≡a description∀the test quest", qtype, tasks)
+       ∀i∈range(1, 4):
+            quest.run_task(i)
+
+
+
+# --- scripts\QuestManager.py ---
+
+↓random
+↓pygame
+¢QuestManager:
+    ∂
+    Manages the quest, including the current state, task execution,
+    branching decisions,∧randomization.
+    ∂
+    ƒ__init__(self, quest, text_renderer, screen):
+        $quest = quest
+        $current_task_id = 1
+        $current_step = 1
+        $is_quest_complete =⊥
+        $text_renderer = text_renderer # Integrate TextRenderer
+        $screen = screen # Screen∀Pygame rendering
+    ƒget_current_narrative(self):
+        ∂Get the current narrative text∀the quest.∂
+        →$quest.tasks[$current_task_id]["narrative"][$current_step]
+    ƒrender_current_narrative(self):
+        current_narrative = $get_current_narrative()
+        $text_renderer.reset(current_narrative)
+       ∃not $text_renderer.finished:
+            $screen.fill((0, 0, 0))
+            $text_renderer.update()
+            $text_renderer.draw()
+            pygame.display.flip()
+    ƒget_current_options(self):
+        ∂Get the current options∀the quest.∂
+        →$quest.tasks[$current_task_id]["answers"][$current_step]
+    ƒset_current_options(self, options : list):
+        ∂Set the current options∀the quest.∂
+       ⊢options != $quest.tasks[$current_task_id]["answers"]:
+            $quest.tasks[$current_task_id]["answers"][$current_step] = options
+        →$quest.tasks[$current_task_id]["answers"][$current_step]
+    ƒadvance_step(self, choice):
+        ∂
+        Advance the step∈the current task, handling branching based on player choice.
+        Does¬currently handle advancing task_ids. Requires implementation.
+        Args:
+            choice (int): The index of the player's chosen option.
+        ∂
+        print(f"Current Task ID: {$current_task_id}")
+        print(f"Tasks: {$quest.tasks}")
+        branching =⊥
+        Ṫ
+            random_event_chance = $quest.tasks[$current_task_id].get("random_event_chance", 0)
+           ⊢random.random() < random_event_chance:
+                $trigger_random_event()
+                →None
+            branching = $quest.tasks[$current_task_id].get("branching", {})
+        ẊTypeError≈e:
+            print(f"Error QuestManager.advance_step(): {e}")
+       ⊢branching:
+           ⊢choice∈branching:
+                $current_task_id = branching[choice]
+                $current_step = 1
+           ⊣
+                $current_step += 1
+        Ṫ
+           ⊢$current_step > len($quest.tasks[$current_task_id]["narrative"]):
+                $complete_task()
+                →None
+        ẊTypeError≈e:
+            print(f"Error QuestManager.advance_step(): {e}")
+        →$get_current_narrative()
+    ƒtrigger_random_event(self):
+        ∂Trigger a random event∧handle its outcome.∂
+        random_event = random.choice($quest.random_events)
+        print(f"Random event: {random_event['description']}")
+       ⊢"outcome"∈random_event:
+            random_event["outcome"]()
+    ƒcomplete_task(self):
+        ∂Mark the current task≈complete∧check⊢the quest≡finished.∂
+        $quest.complete_task($current_task_id, $quest.tasks)
+       ⊢not any(not t["complete"]∀t∈$quest.tasks.values()):
+            $is_quest_complete =⊤
+
+
+
+# --- scripts\Race.py ---
+
+↓sys
+sys.path.append("..") # Adds the parent directory to the Python module search path
+↘systems.core_library ↓race_stats
+¢Race:
+    ∂
+    Compositional Race Class layers over entities/players.
+    Aids∈keeping track of each entity's racial traits∧modifiers.
+    ∂
+    ƒ__init__(self, race, abilities=[], skills=[], feats=[], spells=[], resistances={}, proficiencies=[], movement=30, visibility=None, disposition={}):
+        $race = race
+        $abilities = $get_stat('abilities', race)
+        $skills = $get_stat('skills', race)
+        $feats = $get_stat('feats', race)
+        $spells = $get_stat('spells', race)
+        $resistances = $get_stat('resistances', race)
+        $proficiencies = $get_stat('proficiencies', race)
+        $movement = $get_stat('movement', race)
+        $visibility = $get_stat('visibility', race)
+        $disposition = $get_stat('disposition', race)
+    ƒget_stat(self, stat: str, race: str):
+        ∂Returns race-specific attributes given params.∂
+       ⊢race∈race_stats:
+            →race_stats[race].get(stat,∅) # Returns∅⊢the stat is¬defined
+
+
+
+# --- scripts\combat.py ---
+
+↓random
+↓sys
+sys.path.append("..") # Adds the parent directory to the Python module search path
+↘systems ↓dice_Roll≈dr
+↘..entities ↓PlayerFactory≈pf
+¢Combat:
+    ∂
+    Combat Class to manage all combat-related scenarios∈the game.
+    Attributes:
+        entities (list): A list of all entities participating∈the combat.
+        team1 (list): A list of friendly entities (not enemies).
+        team2 (list): A list of enemy entities.
+    ∂
+    ƒ__init__(self, entities):
+        ∂
+        Initializes the Combat instance∫participating entities.
+        Args:
+            entities (list): A list of all entities (players∧enemies) involved∈the combat.
+        ∂
+        $entities = entities
+        $team1 = [e∀e∈entities⊢e.is_enemy≡False]
+        $team2 = [e∀e∈entities⊢e.is_enemy≡True]
+    ƒroll_initiative(self):
+        ∂
+        Rolls initiative∀all entities to determine the turn order.
+        Currently, it assigns a random integer between 1∧20 to each entity.
+        TODO: Implement proper Dexterity (DEX) checks∀initiative based on each entity's attributes.
+        Returns:
+            list: A list of entities sorted∈descending order based on their initiative scores.
+        ∂
+        initiative_scores = {entity: random.randint(1, 20)∀entity∈$entities} # FIX ME: Implement proper dex calls per entity.
+        sorted_entities = sorted($entities, key=lambda x: initiative_scores[x], reverse=True)
+        →sorted_entities
+    ƒstart_combat(self):
+        ∂
+        Starts the combat loop, managing rounds∧turns until one team≡defeated.
+        The combat↺s∈rounds, where each entity gets a turn based on initiative order.
+        The loop exits when all entities∈either team1∨team2 are no longer alive.
+        ∂
+        turn_order = $roll_initiative()
+        print("Combat begins!") # Announce the start of combat
+        round_number = 1 # Initialize round counter
+       ∃any(e.is_alive()∀e∈$team1)∧any(e.is_alive()∀e∈$team2):
+            print(f"Round {round_number}") # Announce the current round
+           ∀entity∈turn_order:
+               ⊢not (any(e.is_alive()∀e∈$team1)∧any(e.is_alive()∀e∈$team2)):
+                   ↯ # Exit the loop⊢one team has been defeated
+                print(f"{entity.get_name()}'s turn:") # Announce whose turn it is
+                $entity_turn(entity) # Handle the entity's turn
+            round_number += 1 # Increment the round counter
+        print("Combat ends!") # Announce the end of combat
+    ƒentity_turn(self, entity):
+        ∂
+        Handles the actions an entity can perform during their turn.
+        Differentiates between player∧enemy actions by prompting input∀players
+       ∧automating actions∀enemies.
+        Args:
+            entity (Entity): The entity whose turn it≡to act.
+        ∂
+       ∃True: # Loop until a valid action≡taken
+            action = input(f"{entity.get_name()}, choose an action (attack, defend, etc.): ")
+           ⊢action.lower() == "attack":
+                target = $choose_target(entity)
+               ⊢target:
+                    $attack(entity, target) # Execute the attack
+                   ↯ # Exit the loop after a successful action
+           ⊣
+                print("Invalid action. Choose another action.")
+    ƒenemy_turn(self, enemy):
+        ∂
+        Processes an enemy's turn automatically, typically choosing to attack.
+        Args:
+            enemy (Entity): The enemy entity whose turn it≡to act.
+        ∂
+        valid_targets = [e∀e∈$entities⊢e != enemy∧e.is_alive()]
+       ⊢valid_targets:
+            target = random.choice(valid_targets)
+            $attack(enemy, target) # Execute the attack
+    ƒchoose_target(self, entity):
+        ∂
+        Prompts the player to choose a target∀their action.
+        Displays a list of valid targets∧returns the selected target based on player input.
+        Args:
+            entity (Entity): The entity performing the action, used to exclude self ↘targets.
+        Returns:
+            Entity∨None: The chosen target entity⊢valid, otherwise∅.
+        ∂
+        print("Choose a target:") # Prompt to choose a target
+        valid_targets = [e∀e∈$entities⊢e != entity∧e.is_alive()]
+       ∀idx, target∈enumerate(valid_targets):
+            print(f"{idx + 1}. {target.get_name()}") # Display each target∫a number
+        choice = input("Enter the number of the target: ") # Prompt∀target selection
+        Ṫ
+            idx = int(choice) - 1 # Convert input to zero-based index
+           ⊢0 <= idx < len(valid_targets):
+                →valid_targets[idx] # Return the selected target
+        ẊValueError:
+           ∥ # If input is¬a valid integer, ignore∧handle below
+        print("Invalid target choice.") # Notify of invalid choice
+        →None # Return∅⊢no valid target was selected
+    ƒattack(self, attacker, target):
+        ∂
+        Executes an attack action ↘the attacker to the target.
+        Rolls to hit∧calculates damage based on attacker's∧target's attributes.
+        Args:
+            attacker (Entity): The entity performing the attack.
+            target (Entity): The entity being attacked.
+        ∂
+        print(f"{attacker.get_name()} prepares to attack {target.get_name()}!") # Announce the attack
+        hit_roll = random.randint(1, 20) + attacker.get_modifier(attacker.get_dex())
+       ⊢hit_roll >= target.get_arm_c():
+            damage = random.randint(1, 6) + attacker.get_modifier(attacker.get_str()) # Calculate damage
+            print(f"{attacker.get_name()} hits {target.get_name()}∀{damage} damage!") # Announce damage
+            target.set_hp(target.get_hp() - damage) # FIX ME: Simplified damage version∀now, plan on∥ing damage to the target to process (thinking something like target.damage(int, type, crit=False, non_lethal=False))
+       ⊣
+            print(f"{attacker.get_name()} misses the attack!")
+    ƒcombat_simulation(self, entity_one, entity_two):
+        ∂
+        Simulate a turn-based combat scenario between two entities.
+        This function handles the flow of combat, alternating turns between the two entities
+        until one of them≡defeated.
+        Args:
+            entity_one (Player): The first entity participating∈combat.
+            entity_two (Player): The second entity participating∈combat.
+        ∂
+        print("Starting combat simulation...") # Announce the start of combat simulation
+       ∃entity_one.get_hp() > 0∧entity_two.get_hp() > 0:
+            print(f"{entity_one.get_name()}'s turn:") # Announce whose turn it is
+            action = input("Choose an action (attack): ") # Prompt∀action
+           ⊢action.lower() == "attack":
+                attack_roll = dr.roll_d20() + entity_one.get_modifier(entity_one.get_str())
+                print(f"{entity_one.get_name()} rolls {attack_roll} to attack.") # Display the attack roll
+               ⊢attack_roll >= entity_two.get_arm_c():
+                    damage = dr.roll_d6() + entity_one.get_modifier(entity_one.get_str())
+                    print(f"{entity_one.get_name()} hits {entity_two.get_name()}∀{damage} damage!") # Announce damage
+                    entity_two.set_hp(entity_two.get_hp() - damage) # Deduct damage ↘target's HP
+               ⊣
+                    print(f"{entity_one.get_name()} misses the attack.") # Announce miss
+           ⊢entity_two.get_hp() <= 0:
+                print(f"{entity_two.get_name()} has been defeated!") # Announce defeat
+               ↯ # Exit combat⊢Entity Two≡defeated
+            print(f"{entity_two.get_name()}'s turn:") # Announce whose turn it is
+            action = input("Choose an action (attack): ") # Prompt∀action
+           ⊢action.lower() == "attack":
+                attack_roll = dr.roll_d20() + entity_two.get_modifier(entity_two.get_str())
+                print(f"{entity_two.get_name()} rolls {attack_roll} to attack.") # Display the attack roll
+               ⊢attack_roll >= entity_one.get_arm_c():
+                    damage = dr.roll_d6() + entity_two.get_modifier(entity_two.get_str())
+                    print(f"{entity_two.get_name()} hits {entity_one.get_name()}∀{damage} damage!") # Announce damage
+                    entity_one.set_hp(entity_one.get_hp() - damage) # Deduct damage ↘target's HP
+               ⊣
+                    print(f"{entity_two.get_name()} misses the attack.") # Announce miss
+           ⊢entity_one.get_hp() <= 0:
+                print(f"{entity_one.get_name()} has been defeated!") # Announce defeat
+               ↯ # Exit combat⊢Entity One≡defeated
+    ƒcombat_sim(self, player):
+        ∂
+        Simulates a combat scenario between the player∧a bandit.
+        Steps:
+        1. Instantiates a bandit player∫random race∧class.
+        2. Displays the bandit's character sheet.
+        3. Sets up a combat scenario between the player∧the bandit.
+        4. Initiates∧runs the combat.
+        ∂
+        bandit = pf.create_player(npc=True, enemy=True)
+        bandit.sheet()
+        combat = Combat([player, bandit])
+        combat.start_combat()
+
+
+
+# --- scripts\main.py ---
+
+↓random≈r
+↓pygame
+↘entities.PlayerFactory ↓PlayerFactory
+↘systems.ui.text ↓TextRenderer
+↘systems.ButtonManager ↓ButtonManager
+↘systems.Quest ↓Quest
+↘systems.QuestManager ↓QuestManager
+↘systems.DialogueManager ↓DialogueManager
+↘systems.a1_tasks ↓tasks≈a1_tasks
+↘systems.a2_tasks ↓tasks≈a2_tasks
+↘systems.a3_tasks ↓tasks≈a3_tasks
+pygame.init()
+screen =∅
+pygame.display.set_caption('Dijjon')
+text_renderer =∅
+qtype = {
+    "find": Quest.find,
+    "kill": Quest.kill,
+    "skill_check": Quest.skill_check,
+}
+tasks = a1_tasks
+quest = Quest("Act I - Scene I", "The Summit at Hollowreach Citadel", qtype, tasks)
+quest_manager = QuestManager(quest, text_renderer, screen)
+player_factory = PlayerFactory()
+button_manager = ButtonManager(screen)
+button_manager.create_buttons(quest_manager.get_current_options())
+player =∅ # FIX ME: TO be replaced when load functionality≡implemented.
+options = quest_manager.get_current_options()
+dialogue_manager = DialogueManager(quest_manager)
+if¬player:
+        Ṫ
+           player = player_factory.create_player()
+           player.display_info()
+        ẊException≈e:
+            print(f"Error creating player: {e}")
+dialogue_manager.run_dialogue_event(player)
+
+
+
+# --- scripts\trade.py ---
+
+¢Trade:
+    ∂
+    Trade Class∀handling shopping∀items∧trading items within the game.
+    Attributes:
+        transaction_id (int): Unique identifier∀each trade transaction.
+    ∂
+    ƒ__init__(self, transaction_id):
+        ∂
+        Initializes a new Trade instance∫a given transaction ID.
+        Args:
+            transaction_id (int): The initial transaction ID.
+        ∂
+        $transaction_id = transaction_id
+    ƒtick_transaction_id(self):
+        ∂
+        Increments the transaction ID by one to ensure uniqueness.
+        Returns:
+            int: The updated transaction ID.
+        ∂
+        $transaction_id += 1
+        →$transaction_id
+    ƒhas_gold_check(self, player, item_cost=0):
+        ∂
+        Checks⊢the player has sufficient gold to pay∀an item, service,∨interaction.
+        Args:
+            player (Player): The player object containing gold attribute.
+            item_cost (int, optional): The cost of the item∨service. Defaults to 0.
+        Returns:
+            bool:⊤⊢player has enough gold,⊥ otherwise.
+        ∂
+       ⊢player.gold >= item_cost:
+            →True
+       ⊣
+            →False
+    ƒorder(self, player, item_list):
+        ∂
+        Handles the ordering process where a player can purchase items ↘a given item list.
+        Args:
+            player (Player): The player object making the purchase.
+            item_list (dict): A dictionary of available items to purchase,∫item names≈keys∧item objects≈values.
+        ∂
+       Ωlast_var # Declaring 'last_var'≈aΩvariable (ensure it's defined elsewhere)
+        print(f"Buy:\n\nYour GP: {player.gold}")
+       ∀i, (name, item)∈enumerate(item_list.items()):
+            print(f"{i+1}. {item.name} - {item.val} gp")
+        choice = input("What would you like to purchase?\n")
+       ∃not choice.isdigit()∨int(choice) not∈range(1, len(item_list)+1):
+            invalid_choice = input(f"Invalid choice. Please select a valid option. \nWould you like to leave?\nInput the number of your choice\n\n1. Yes\n2. No")
+           ⊢int(invalid_choice()) == 1:
+                last_var
+           ~int(invalid_choice()) == 2:
+                $order(item_list)
+           ⊣
+                print(f"\nInvalid input. Returning to last screen∧returning input≈error to logs.\n")
+                $order(item_list)
+            $order(item_list)
+        chosen_item = list(item_list.values())[int(choice)-1]
+       ⊢$has_gold_check(player, chosen_item.val) ==⊤:
+            player.gold -= chosen_item.val
+            print(f"You have purchased {chosen_item.name}∀{chosen_item.val} gold.")
+            temp_dict1 = {chosen_item.name : chosen_item.val}
+            player.inventory.update(temp_dict1) # This may overwrite existing items∫the same name
+            temp_dict1.pop(chosen_item.name) # Deletes temp_dict1 key∧value
+            print(player.inventory, "\n")
+       ⊣
+            print(f"You do¬have enough gp to purchase {chosen_item.name}")
+            $order(item_list)
+
