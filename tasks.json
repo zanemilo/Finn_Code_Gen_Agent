@@ -2,163 +2,83 @@
     "tasks": [
         {
             "id": 1,
-            "task": "Analyze Existing Modules for Clock Creation: Review the existing files (e.g., main.py, task_manager.py, script_generator.py, etc.) in the current and parent directories to identify reusable components and design patterns that can be applied to create a functional clock in a Pygame interface.",
+            "task": "Create a Python script that implements a psych profile assessment based on ASAM. The script should prompt the user for responses, score the answers based on ASAM criteria, and export the results to a `psych_profile.txt` file. Ensure the response is a single `.py` file in a single code block for automatic extraction.",
             "priority": "high",
-            "status": "completed",
-            "skip_auditor": false,
-            "execute": true
+            "status": "generated_only",
+            "execute": false,
+            "file_name": "asam_psych_profile.py"
         },
         {
             "id": 2,
-            "task": "Design Clock Interface Module: Create a detailed design for the clock interface using Pygame. The design should be modular and include clear class and function names (e.g., ClockDisplay, ClockController) to separate concerns such as drawing the clock, handling user input, and layout management.",
+            "task": "Extend the ASAM psych profile script by implementing a scoring system with weighted categories. The system should analyze the user's responses and categorize them according to ASAM dimensions, providing structured results in `psych_profile.txt`. Ensure the response is a single `.py` file in a single code block.",
             "priority": "high",
-            "status": "completed",
-            "skip_auditor": false,
-            "execute": true
+            "status": "generated_only",
+            "execute": false,
+            "file_name": "asam_weighted_scoring.py"
         },
         {
             "id": 3,
-            "task": "Implement Clock Logic Module: Develop the core logic for the clock. This includes timekeeping (using system time or a timer class, e.g., ClockEngine), updating the display at regular intervals, and ensuring the logic is decoupled from the Pygame interface for reusability.",
+            "task": "Modify the ASAM psych profile script to include a **questionnaire with Likert-scale responses**. Add logic to interpret responses based on scoring ranges and provide detailed feedback in `psych_profile.txt`. Ensure the response is a single `.py` file in a single code block.",
             "priority": "high",
-            "status": "completed",
-            "skip_auditor": false,
-            "execute": true
+            "status": "generated_only",
+            "execute": false,
+            "file_name": "asam_likert_questions.py"
         },
         {
             "id": 4,
-            "task": "Integrate Clock Logic with Pygame Interface: Combine the clock logic and the designed interface into a unified module (e.g., ClockApp or ClockModule). Ensure that the clock updates correctly in real time and that the integration is smooth and modular.",
+            "task": "Implement a **CLI-based UI enhancement** for the ASAM psych profile script, allowing users to navigate between questions, review previous answers, and confirm responses before submission. Ensure the response is a single `.py` file in a single code block.",
             "priority": "medium",
-            "status": "completed",
-            "skip_auditor": false,
-            "execute": true
+            "status": "generated_only",
+            "execute": false,
+            "file_name": "asam_cli_ui.py"
         },
         {
             "id": 5,
-            "task": "Test and Debug Clock Module: Thoroughly test the integrated clock module within a Pygame window. Identify and fix any issues such as time drift, display errors, or input handling problems. Log all errors and changes clearly.",
+            "task": "Add a **summary analysis section** at the end of the ASAM psych profile assessment. The script should generate a **summary report** with bullet points highlighting risk factors, recommendations, and a visualized ASCII-based progress bar. Export results to `psych_profile.txt`. Ensure the response is a single `.py` file in a single code block.",
             "priority": "medium",
-            "status": "pending",
-            "skip_auditor": false,
-            "execute": true
+            "status": "generated_only",
+            "execute": false,
+            "file_name": "asam_summary_analysis.py"
         },
         {
             "id": 6,
-            "task": "Create a Monte Carlo Simulation for Portfolio Risk Analysis: Implement a Monte Carlo simulation to analyze potential outcomes for stock market investments based on historical data.",
-            "priority": "high",
-            "status": "pending",
-            "skip_auditor": false,
-            "execute": true
+            "task": "Enhance the ASAM psych profile script by implementing **data validation and error handling**. Ensure input sanitization, prevent empty responses, and provide user-friendly messages. Export results to `psych_profile.txt`. Ensure the response is a single `.py` file in a single code block.",
+            "priority": "medium",
+            "status": "generated_only",
+            "execute": false,
+            "file_name": "asam_input_validation.py"
         },
         {
             "id": 7,
-            "task": "Develop a Neural Network for Bird Identification: Build a simple convolutional neural network (CNN) using PyTorch to classify bird species from an image dataset.",
+            "task": "Convert the ASAM psych profile script into a **Tkinter GUI application** with labeled input fields, radio buttons for Likert-scale responses, and a submit button. The GUI should save results to `psych_profile.txt`. Ensure the response is a single `.py` file in a single code block.",
             "priority": "high",
-            "status": "pending",
-            "skip_auditor": false,
-            "execute": true
+            "status": "generated_only",
+            "execute": false,
+            "file_name": "asam_tkinter_gui.py"
         },
         {
             "id": 8,
-            "task": "Automate Web Scraping for Market Data: Write a Python script using Selenium or Helium to scrape stock market data and save it in a structured format.",
+            "task": "Enhance the **Tkinter GUI** version of the ASAM psych profile script by adding a **progress bar** that visually represents the completion percentage of the questionnaire. Ensure the response is a single `.py` file in a single code block.",
             "priority": "medium",
-            "status": "pending",
-            "skip_auditor": false,
-            "execute": true
+            "status": "generated_only",
+            "execute": false,
+            "file_name": "asam_gui_progress_bar.py"
         },
         {
             "id": 9,
-            "task": "Create a Secure File Encryption System: Implement a script using AES-256 encryption to securely encrypt and decrypt files.",
+            "task": "Extend the ASAM psych profile assessment by adding a **JSON-based database** to store previous assessment results. Implement functionality for users to view past reports. Ensure the response is a single `.py` file in a single code block.",
             "priority": "high",
-            "status": "pending",
-            "skip_auditor": false,
-            "execute": true
+            "status": "generated_only",
+            "execute": false,
+            "file_name": "asam_json_storage.py"
         },
         {
             "id": 10,
-            "task": "Develop a Procedural Map Generator: Use Perlin noise to create randomized, yet structured, 2D game maps for your game engine.",
+            "task": "Implement an **AI-powered insights feature** in the ASAM psych profile script using OpenAI\u00e2\u20ac\u2122s API to generate personalized analysis based on assessment scores. The AI should provide tailored feedback in `psych_profile.txt`. Ensure the response is a single `.py` file in a single code block.",
             "priority": "high",
-            "status": "pending",
-            "skip_auditor": false,
-            "execute": true
-        },
-        {
-            "id": 11,
-            "task": "Integrate OpenAI’s API for Game Narratives: Use OpenAI’s GPT-4 to dynamically generate dialogue and lore for a text-based RPG.",
-            "priority": "high",
-            "status": "pending",
-            "skip_auditor": false,
-            "execute": true
-        },
-        {
-            "id": 12,
-            "task": "Implement a Dynamic Quest System: Design a script that allows procedural generation of quests based on player actions and game state.",
-            "priority": "medium",
-            "status": "pending",
-            "skip_auditor": false,
-            "execute": true
-        },
-        {
-            "id": 13,
-            "task": "Build a Stock Price Prediction Model: Implement a machine learning model using LSTMs to predict stock prices.",
-            "priority": "high",
-            "status": "pending",
-            "skip_auditor": false,
-            "execute": true
-        },
-        {
-            "id": 14,
-            "task": "Create an Interactive Chatbot for Personal Use: Implement a chatbot that responds to queries and automates simple tasks using OpenAI's API.",
-            "priority": "medium",
-            "status": "pending",
-            "skip_auditor": false,
-            "execute": true
-        },
-        {
-            "id": 15,
-            "task": "Develop a Lightweight HTTP Server in Python: Implement a minimal HTTP server that can serve static and dynamic content.",
-            "priority": "low",
-            "status": "pending",
-            "skip_auditor": false,
-            "execute": true
-        },
-        {
-            "id": 16,
-            "task": "Enhance Logging with a Real-Time Monitoring Dashboard: Create a web dashboard that visualizes system logs using Flask and a front-end framework.",
-            "priority": "medium",
-            "status": "pending",
-            "skip_auditor": false,
-            "execute": true
-        },
-        {
-            "id": 17,
-            "task": "Generate Animated Particle Effects in Pygame: Write a Pygame script that generates dynamic and interactive particle effects.",
-            "priority": "medium",
-            "status": "pending",
-            "skip_auditor": false,
-            "execute": true
-        },
-        {
-            "id": 18,
-            "task": "Create a Password Manager with Secure Storage: Implement a Python script that securely stores passwords using Argon2 hashing and encrypted storage.",
-            "priority": "high",
-            "status": "pending",
-            "skip_auditor": false,
-            "execute": true
-        },
-        {
-            "id": 19,
-            "task": "Write a Script to Generate Random Dungeons: Use a cellular automata algorithm to procedurally generate dungeon layouts for a game.",
-            "priority": "medium",
-            "status": "pending",
-            "skip_auditor": false,
-            "execute": true
-        },
-        {
-            "id": 20,
-            "task": "Implement a Shader for Realistic Lighting in OpenGL: Write a GLSL shader that simulates realistic lighting and shadows for a game environment.",
-            "priority": "high",
-            "status": "pending",
-            "skip_auditor": false,
-            "execute": true
+            "status": "generated_only",
+            "execute": false,
+            "file_name": "asam_ai_analysis.py"
         }
     ]
 }

@@ -13,24 +13,24 @@ def sanitize_filename(task_description):
 
 def generate_unique_filename(base_name):
     """Ensure unique filename by appending numbers if needed."""
-    script_path = os.path.join(SCRIPT_DIR, f"_{base_name}.py")
+    script_path = os.path.join(SCRIPT_DIR, f"{base_name}.py")
     count = 1
     while os.path.exists(script_path):
-        script_path = os.path.join(SCRIPT_DIR, f"_{base_name}_{count}.py")
+        script_path = os.path.join(SCRIPT_DIR, f"{base_name}_{count}.py")
         count += 1
     return script_path
 
-def generate_script(prompt, task_description):
-    """Generate Python script dynamically based on task description."""
+def generate_script(prompt, task_description, file_name=None):
+    """Generate Python script dynamically based on task description or provided file name."""
     extractor = OpenAIScriptExtractor()
 
-    # Attempt to generate a descriptive filename
-    base_filename = sanitize_filename(task_description)
-    if base_filename:
-        script_path = generate_unique_filename(base_filename)
+    # If a filename is provided in the task, use it; otherwise, generate one dynamically
+    if file_name:
+        base_filename = sanitize_filename(file_name)
     else:
-        # Fallback if filename generation fails
-        script_path = generate_unique_filename("script")
+        base_filename = sanitize_filename(task_description)
+
+    script_path = generate_unique_filename(base_filename)
 
     print(f"Generating script: {script_path}")
     

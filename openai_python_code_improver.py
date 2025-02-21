@@ -1,6 +1,17 @@
 import os
+import sys
 import openai
+
+# Get the current script directory (agents/)
+script_dir = os.path.dirname(os.path.abspath(__file__))
+
+# Move up one level to the project root directory
+project_root = os.path.abspath(os.path.join(script_dir, os.pardir))
+sys.path.append(project_root)
+
+# Now import
 from openai_script_extract import OpenAIScriptExtractor
+
 
 class PythonCodeReviewer:
     def __init__(self, api_key, model="gpt-4o"):
