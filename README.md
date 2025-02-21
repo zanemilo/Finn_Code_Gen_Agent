@@ -120,9 +120,9 @@ pip install openai flake8
 ### **Current Limitations**
 ❌ *Automated Task Scheduling Needed*  
 ❌ *GUI Dashboard for Task Monitoring Could Improve Usability*  
-❌ *Advanced Error Recovery Mechanisms Still in Development*
-❌ *Automated Code Execution is Non-functional*
-❌ *Summary Report in logs/report.log does not save properly*   
+❌ *Advanced Error Recovery Mechanisms Still in Development*  
+❌ *Automated Code Execution is Non-functional*  
+  
 
 ## Future Improvements
 
