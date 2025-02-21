@@ -132,6 +132,10 @@ pip install openai flake8
 - **GUI Dashboard** – A web-based interface for real-time task monitoring.
 - **Enhanced Error Handling** – More robust recovery mechanisms for failed executions.
 - **Automated Task Auditing/Updating** – Refine and refactor code base, ensuring maintainability.
+- **Rolling Context Window** – Implement a rolling context window that only retains the most recent and relevant interactions. This will reduce token usage and improve performance by dynamically pruning outdated context.
+- **Log Clean-Up** – Enhance the logging system to automatically clean up redundant or unnecessary log entries. This will help maintain clarity and manageability of log files over time.
+- **Refined Context Generation** – Update the context generator to ignore itself and filter out irrelevant files (e.g., test files, temporary files, and non-essential modules). This will ensure that only pertinent code is aggregated into the context file, improving accuracy and efficiency.
+- **Improved File Filtering** – Fine-tune file scanning logic to detect and skip files that should not be included, preventing the context generator from processing its own scripts and other extraneous content.
 
 ## Contributing
 
