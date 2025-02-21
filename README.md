@@ -2,21 +2,31 @@
 
 ## Overview
 
-This project is an autonomous agent system that generates, reviews, audits, and executes Python scripts using OpenAI's GPT models. It processes tasks in a structured pipeline that includes:
+FINN is an autonomous agent system designed to generate, audit, execute, and improve Python scripts using OpenAI's GPT models. It processes tasks dynamically, ensuring structured execution and intelligent refinement.
 
-- **Script Generation:** Uses OpenAI API to generate Python code from a natural language prompt.
-- **Code Auditing and Improvement:** Combines static analysis (flake8) and AI-based code review to improve code quality.
-- **Script Execution:** Runs the generated scripts in a controlled environment.
-- **Logging and Reporting:** Logs all actions and generates a summary report for each task.
-- **Task Management:** Reads and updates tasks from a JSON file (`tasks.json`).
+### **Core Functionalities**
+
+- **Dynamic Task Management:** Reads and executes tasks dynamically from `tasks.json`, updating statuses accordingly.
+- **AI-Powered Code Generation & Review:** Uses OpenAI's API to generate scripts and improve code quality based on best practices.
+- **Secure & Controlled Execution:** Ensures safe script execution with logging and error tracking.
+- **Comprehensive Logging & Reporting:** Logs all actions and provides detailed task summaries for transparency.
 
 ## Features
 
-- **Dynamic Task Execution:** Reads and executes tasks dynamically from `tasks.json`.
-- **Automated Code Review:** Uses AI and static analysis to ensure high code quality.
-- **Controlled Execution Environment:** Runs scripts safely and logs results.
-- **Integration with OpenAI API:** Uses AI to enhance script generation and review.
-- **Logging System:** Detailed logs and summary reports for transparency.
+### ✅ **Enhanced AI-Based Code Improvement**  
+- Uses `openai_python_code_improver.py` and `openai_script_extract.py` for structured script enhancement.
+- Debugging mechanisms allow for improved accuracy in AI-generated code.
+
+### ✅ **Dynamic Task Management**  
+- Loads tasks from `tasks.json`, processes them, and updates statuses efficiently.
+
+### ✅ **Robust Logging & Reporting**  
+- Logs execution flow in `logs/system.log` and task summaries in `logs/report.log`.
+- Improved log flushing ensures all information is captured properly.
+
+### ✅ **Improved OpenAI Integration**  
+- Extracts and refines AI-generated code with better response parsing.
+- Saves raw API responses for debugging to enhance script extraction.
 
 ## Requirements
 
@@ -36,7 +46,7 @@ pip install openai flake8
 
 1. **Clone the Repository:**
    ```bash
-   git clone https://github.com/yourusername/your-repo.git
+   git clone https://github.com/zanemilo/Finn_Code_Gen_Agent
    cd your-repo
    ```
 
@@ -67,6 +77,8 @@ pip install openai flake8
    ├── tasks.json                  # JSON file containing tasks
    ├── openai_python_code_improver.py  # AI-based code review module
    ├── openai_script_extract.py    # Extracts OpenAI responses
+   ├── task_orchestrator.py        # Handles execution flow
+   ├── task_summary.py             # Summarizes task progress
    ├── main.py                     # Main orchestration file
    ```
 
@@ -81,7 +93,9 @@ pip install openai flake8
                "id": 1,
                "task": "Create a Python script that prints 'Hello, World!'",
                "priority": "high",
-               "status": "pending"
+               "status": "pending",
+               "execute": false,
+               "file_name": "script_name.py"
            }
        ]
    }
@@ -96,38 +110,28 @@ pip install openai flake8
    - Detailed logs in `logs/system.log`
    - Summary reports in `logs/report.log`
 
-When all tasks are completed, the system logs the completion and exits.
-
 ## Known Issues & Limitations
 
-### 1. **File Not Found Errors During Static Analysis**
-   - **Issue:** Some scripts fail during static analysis due to missing files or incorrect paths.
-   - **Cause:** The system attempts to run `flake8` on a script that may not exist or is improperly referenced.
-   - **Solution:** Add a file existence check before executing static analysis.
+### **Resolved Issues**
+✅ *Tasks.json Parsing Errors Fixed*  
+✅ *Logging System Improved for Better Debugging*  
+✅ *Refined AI-Based Code Review for Enhanced Code Quality*  
 
-### 2. **Tasks.json Not Properly Parsed**
-   - **Issue:** Errors such as `AttributeError: 'str' object has no attribute 'get'` occur.
-   - **Cause:** The task file may be read incorrectly as a string instead of a dictionary.
-   - **Solution:** Ensure proper JSON parsing and validation before processing tasks.
-
-### 3. **Execution Failure Due to Script Logic Issues**
-   - **Issue:** Some generated scripts fail during execution due to undefined variables or incorrect imports.
-   - **Solution:** Improve AI prompts for script generation to ensure better structure and handling of dependencies.
-
-### 4. **Repetitive Task Regeneration**
-   - **Issue:** Tasks that fail execution are sometimes regenerated repeatedly without fixing the root cause.
-   - **Solution:** Introduce an error-handling mechanism to modify or improve failing tasks before retrying.
-
-### 5. **Logging Needs Refinement**
-   - **Issue:** Some error messages are too vague to diagnose issues properly.
-   - **Solution:** Improve logging by including more context and debugging information in failure cases.
+### **Current Limitations**
+❌ *Automated Task Scheduling Needed*  
+❌ *GUI Dashboard for Task Monitoring Could Improve Usability*  
+❌ *Advanced Error Recovery Mechanisms Still in Development*
+❌ *Automated Code Execution is Non-functional*
+❌ *Summary Report in logs/report.log does not save properly*   
 
 ## Future Improvements
 
-- **Enhanced Error Handling:** Better management of failed executions.
-- **Improved AI Prompts:** Fine-tuned prompt engineering for better script generation.
-- **Docker Integration:** Run scripts in isolated environments.
-- **GUI Dashboard:** Provide a web-based interface for task monitoring.
+- **Automated Task Scheduling** – Implementing periodic execution for scheduled tasks.
+- **Automated Task Auditing/Updating** – Review previously output tasks scripts, alter tasks.json task prompts to fine tune future outputs.
+- **Contextual Processing** – Create middleman agent to oversee script/task production by verifying context of overall goal by verifying summary, logs, and scripts to align with goal.
+- **GUI Dashboard** – A web-based interface for real-time task monitoring.
+- **Enhanced Error Handling** – More robust recovery mechanisms for failed executions.
+- **Automated Task Auditing/Updating** – Refine and refactor code base, ensuring maintainability.
 
 ## Contributing
 
